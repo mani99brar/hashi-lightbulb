@@ -1,14 +1,21 @@
 import React from "react";
 import { Hex, Address } from "viem";
 import { getWalletClient, chiadoPublicClient } from "@/utils/viemClient";
-import { LIGHTBULB_ADDRESS, SWITCH_ADDRESS, YARU_ADDRESS } from "@/utils/consts";
+import {
+  HashiAddress,
+  LIGHTBULB_ADDRESS,
+  SWITCH_ADDRESS,
+  YARU_ADDRESS,
+} from "@/utils/consts";
 import { YaruAbi } from "@/utils/abis/yaruAbi";
 import { gnosisChiado } from "viem/chains";
 import { BridgeAddresses, Bridges } from "@/utils/consts";
 
 export interface HistoryEntry {
-    nonce: string;
-    data: Hex;
+  nonce: string;
+  data: Hex;
+  threshold: number;
+  bridges: HashiAddress[];
   /** original switch transaction hash */
   switchTx: string;
   /** LayerZero destination transaction hash */
@@ -16,11 +23,11 @@ export interface HistoryEntry {
     txHash: string;
     isUsed: boolean;
   };
-  /** Wormhole relayer transaction hash */
-    wormhole: {
-      txHash: string;
-      isUsed: boolean;
-    };
+  /** CCIP relayer transaction hash */
+  CCIP: {
+    txHash: string;
+    isUsed: boolean;
+  };
   /** Vea relayer transaction hash */
   vea: {
     txHash: string;
@@ -31,70 +38,57 @@ export interface HistoryEntry {
 }
 
 interface HistoryTableProps {
-    account: Address;
+  account: Address;
   history: HistoryEntry[];
 }
 
-export function HistoryTable({ account,history }: HistoryTableProps) {
-    const onExecute = async (entry: HistoryEntry) => {
-        const client = getWalletClient();
-      if (!client) {
-        alert("Connect your wallet to execute messages");
-        return;
-      }
-      const reporters: Address[] = [];
-      const adapters: Address[] = [];
-      if (entry.layerZero.isUsed) {
-        reporters.push(BridgeAddresses[Bridges.LZ].reporter);
-        adapters.push(BridgeAddresses[Bridges.LZ].adapter);
-      }
-      if (entry.wormhole.isUsed) {
-        reporters.push(BridgeAddresses[Bridges.WH].reporter);
-        adapters.push(BridgeAddresses[Bridges.WH].adapter);
-      }
-      if (entry.vea.isUsed) {
-        reporters.push(BridgeAddresses[Bridges.VEA].reporter);
-        adapters.push(BridgeAddresses[Bridges.VEA].adapter);
-      }
-      console.log(entry.nonce);
-      try {
-        // Build the Message struct for executeMessages
-        const message = {
-          nonce: BigInt(entry.nonce),
-          data: entry.data,
-          targetChainId: 10200,
-          threshold: BigInt(1), 
-          sender: SWITCH_ADDRESS,
-          receiver: LIGHTBULB_ADDRESS,
-          reporters,
-          adapters,
-        };
+export function HistoryTable({ account, history }: HistoryTableProps) {
+  const onExecute = async (entry: HistoryEntry) => {
+    const client = getWalletClient();
+    if (!client) {
+      alert("Connect your wallet to execute messages");
+      return;
+    }
+    const reporters: Address[] = entry.bridges.map((b) => b.reporter);
+    const adapters: Address[] = entry.bridges.map((b) => b.adapter);
+    try {
+      // Build the Message struct for executeMessages
+      const message = {
+        nonce: BigInt(58),
+        data: entry.data,
+        targetChainId: 10200,
+        threshold: entry.threshold,
+        sender: SWITCH_ADDRESS,
+        receiver: LIGHTBULB_ADDRESS,
+        reporters,
+        adapters,
+      };
 
-        // Call executeMessages on Yaru contract
-        const txHash = await client.writeContract({
-          address: YARU_ADDRESS,
-          abi: YaruAbi,
-          functionName: "executeMessages",
-            args: [[message]],
-            chain: gnosisChiado,
-          account
-        });
+      // Call executeMessages on Yaru contract
+      const txHash = await client.writeContract({
+        address: YARU_ADDRESS,
+        abi: YaruAbi,
+        functionName: "executeMessages",
+        args: [[message]],
+        chain: gnosisChiado,
+        account,
+      });
 
-        const receipt = await chiadoPublicClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
-          console.log("Receipt received:", receipt);
-    
-          if (receipt.status === "success") {
-            alert(`Message executed successfully! Tx: ${txHash}`);
-          } else {
-            throw new Error("Transaction failed on-chain");
-          }
-        } catch (err: any) {
-          console.error("executeMessages failed", err);
-          alert(`Execution failed: ${err.message || err}`);
-        }
-    };
+      const receipt = await chiadoPublicClient.waitForTransactionReceipt({
+        hash: txHash,
+      });
+      console.log("Receipt received:", receipt);
+
+      if (receipt.status === "success") {
+        alert(`Message executed successfully! Tx: ${txHash}`);
+      } else {
+        throw new Error("Transaction failed on-chain");
+      }
+    } catch (err: any) {
+      console.error("executeMessages failed", err);
+      alert(`Execution failed: ${err.message || err}`);
+    }
+  };
   return (
     <div className="mx-auto bg-black border-2 border-white w-full rounded-lg shadow-md p-6">
       <h2 className="text-xl font-semibold mb-4">Transaction History</h2>
@@ -104,7 +98,7 @@ export function HistoryTable({ account,history }: HistoryTableProps) {
             <tr>
               <th className="pb-2 border-b">Switch TXN</th>
               <th className="pb-2 border-b">LayerZero</th>
-              <th className="pb-2 border-b">Wormhole</th>
+              <th className="pb-2 border-b">CCIP</th>
               <th className="pb-2 border-b">Vea</th>
               <th className="pb-2 border-b">Action</th>
             </tr>
@@ -136,9 +130,9 @@ export function HistoryTable({ account,history }: HistoryTableProps) {
                 </td>
                 <td className="py-2">
                   {" "}
-                  {entry.wormhole.isUsed ? (
+                  {entry.CCIP.isUsed ? (
                     <a
-                      href={` https://wormholescan.io/#/tx/${entry.switchTx}?network=Testnet`}
+                      href={`https://ccip.chain.link/`}
                       target="_blank"
                       className="text-blue-600 hover:underline"
                     >

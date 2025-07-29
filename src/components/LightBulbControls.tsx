@@ -8,17 +8,24 @@ import { publicClient } from "@/utils/viemClient";
 import { YahoAbi } from "@/utils/abis/yahoAbi";
 import { encodeAbiParameters } from "viem";
 
-type Bridge = "LayerZero" | "Wormhole" | "Vea";
+type Bridge = "LayerZero" | "CCIP" | "Vea";
 
-export function LightbulbControls({account, setHistory}: { account: Address | null, setHistory: React.Dispatch<React.SetStateAction<HistoryEntry[]>> }) {
+export function LightbulbControls({
+  account,
+  setHistory,
+}: {
+  account: Address | null;
+  setHistory: React.Dispatch<React.SetStateAction<HistoryEntry[]>>;
+}) {
   const [threshold, setThreshold] = useState<number | "">("");
   const { turnOnLightBulb, txHash, status } = useSwitch();
   const [isLoading, setIsLoading] = useState(false);
+  const [bridges, setBridges] = useState<HashiAddress[]>([]);
   const [selectedBridges, setSelectedBridges] = useState<
     Record<Bridge, boolean>
   >({
     LayerZero: false,
-    Wormhole: false,
+    CCIP: false,
     Vea: false,
   });
 
@@ -41,7 +48,7 @@ export function LightbulbControls({account, setHistory}: { account: Address | nu
   };
 
   const handleSubmit = async () => {
-    if(!account) {
+    if (!account) {
       alert("Please connect your wallet first");
       return;
     }
@@ -56,10 +63,8 @@ export function LightbulbControls({account, setHistory}: { account: Address | nu
       (bridge) => BridgeAddresses[bridge]
     );
     console.log({ threshold, selectedHashiAddresses, account });
-    await turnOnLightBulb(
-      selectedHashiAddresses,
-      account
-    );
+    setBridges(selectedHashiAddresses);
+    await turnOnLightBulb(threshold, selectedHashiAddresses, account);
   };
 
   useEffect(() => {
@@ -75,12 +80,12 @@ export function LightbulbControls({account, setHistory}: { account: Address | nu
       let currentNonce = BigInt(0);
       (async () => {
         // Fetch current nonce from Yaho
-        currentNonce = await publicClient.readContract({
+        currentNonce = (await publicClient.readContract({
           address: YAHO_ADDRESS,
           abi: YahoAbi,
           functionName: "currentNonce",
           args: [],
-        }) as bigint;
+        })) as bigint;
         console.log("Current nonce on Yaho:", currentNonce);
         const messageNonce = Number(currentNonce) - 1;
         console.log("Message nonce for new entry:", messageNonce);
@@ -88,13 +93,15 @@ export function LightbulbControls({account, setHistory}: { account: Address | nu
           nonce: messageNonce.toString(),
           data: encodeAbiParameters([{ type: "address" }], [account!]),
           switchTx: txHash,
+          threshold: Number(threshold),
+          bridges,
           layerZero: {
             txHash: "",
             isUsed: selectedBridges.LayerZero,
           },
-          wormhole: {
+          CCIP: {
             txHash: "",
-            isUsed: selectedBridges.Wormhole,
+            isUsed: selectedBridges.CCIP,
           },
           vea: {
             txHash: "",
@@ -113,7 +120,6 @@ export function LightbulbControls({account, setHistory}: { account: Address | nu
           return updated;
         });
       })();
-      
     }
   }, [txHash]);
 
@@ -139,7 +145,7 @@ export function LightbulbControls({account, setHistory}: { account: Address | nu
       <div className="mb-6">
         <span className="block text-lg font-medium mb-2">Select Bridge</span>
         <div className="space-y-3 pl-2">
-          {(["LayerZero", "Wormhole", "Vea"] as Bridge[]).map((bridge) => (
+          {(["LayerZero", "CCIP", "Vea"] as Bridge[]).map((bridge) => (
             <label key={bridge} className="flex items-center">
               <input
                 type="checkbox"
@@ -147,7 +153,13 @@ export function LightbulbControls({account, setHistory}: { account: Address | nu
                 onChange={() => toggleBridge(bridge)}
                 className="h-5 w-5 text-blue-600 border-gray-300 rounded"
               />
-              <span className={`ml-3 ${selectedBridges[bridge] ? "text-blue-600" : "text-gray-700"}`}>{bridge}</span>
+              <span
+                className={`ml-3 ${
+                  selectedBridges[bridge] ? "text-blue-600" : "text-gray-700"
+                }`}
+              >
+                {bridge}
+              </span>
             </label>
           ))}
         </div>
@@ -158,7 +170,7 @@ export function LightbulbControls({account, setHistory}: { account: Address | nu
         onClick={handleSubmit}
         className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
       >
-        {isLoading?"Turning On Lightbulb...":"Turn On Lightbulb"}
+        {isLoading ? "Turning On Lightbulb..." : "Turn On Lightbulb"}
       </button>
     </div>
   );

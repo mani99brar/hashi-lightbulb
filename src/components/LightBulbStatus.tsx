@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { getWalletClient } from "@/utils/viemClient";
 import { fetchLightBulbToggledEvents } from "@/utils/logs";
+import { useLightBulb } from "@/hooks/useLigthBulb";
+import { Address } from "viem";
 
 /**
  * Always-visible dialog to check and display lightbulb on/off status.
@@ -11,14 +13,14 @@ export function LightbulbStatusDialog() {
   // optional override input
   const [inputAddress, setInputAddress] = useState<string>("");
   // current lightbulb status
-  const [isOn, setIsOn] = useState<boolean| null>(null);
+  const { isOn, loading, error, refetch } = useLightBulb(address as Address);
 
   // fetch connected address on mount
-    useEffect(() => {
-        (async () => {
-          const events = await fetchLightBulbToggledEvents();
-          console.log("Fetched events:", events);
-        })();
+  useEffect(() => {
+    (async () => {
+      const events = await fetchLightBulbToggledEvents();
+      console.log("Fetched events:", events);
+    })();
     const client = getWalletClient();
     if (client) {
       client.getAddresses().then((addrs) => {
@@ -37,10 +39,7 @@ export function LightbulbStatusDialog() {
       return;
     }
     try {
-      // TODO: replace with real on-chain read (e.g. readContract)
-      // For demo, randomly toggle status
-      const simulated = Math.random() >= 0.5;
-      setIsOn(simulated);
+      refetch();
     } catch (err) {
       console.error("Failed to fetch status", err);
       alert("Error checking lightbulb status");
@@ -76,7 +75,7 @@ export function LightbulbStatusDialog() {
             onClick={handleCheckStatus}
             className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
           >
-            Check Status
+            {loading ? "Checking..." : "Check Status"}
           </button>
         </div>
       </div>

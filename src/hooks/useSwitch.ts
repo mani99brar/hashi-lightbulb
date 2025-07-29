@@ -11,6 +11,7 @@ export type TxnStatus = "idle" | "pending" | "success" | "error";
 interface UseSwitchReturn {
   /** call this to trigger turnOnLightBulb */
   turnOnLightBulb: (
+    threshold: number,
     HashiAddresses: HashiAddress[],
     account: Address
   ) => Promise<string>;
@@ -33,38 +34,46 @@ export function useSwitch(): UseSwitchReturn {
   const [error, setError] = useState<string>();
 
   const turnOnLightBulb = async (
-      bridges: HashiAddress[],
-      account: Address
+    threshold: number,
+    bridges: HashiAddress[],
+    account: Address
   ): Promise<string> => {
     const client = getWalletClient();
     if (!client) throw new Error("Wallet not connected");
-      const reporters: Address[] = bridges.map((b) => b.reporter);
-      const adapters: Address[] = bridges.map((b) => b.adapter);
+    const reporters: Address[] = bridges.map((b) => b.reporter);
+    const adapters: Address[] = bridges.map((b) => b.adapter);
     try {
       setStatus("pending");
       setError(undefined);
-        // send transaction
-        const data = encodeFunctionData({
-          abi: SwitchAbi,
-          functionName: "turnOnLightBulb",
-          args: [LIGHTBULB_ADDRESS, reporters, adapters],
-        });
+      // send transaction
+      const data = encodeFunctionData({
+        abi: SwitchAbi,
+        functionName: "turnOnLightBulb",
+        args: [LIGHTBULB_ADDRESS, threshold, reporters, adapters],
+      });
 
-        // Estimate gas via public client
-        const estimatedGas = await publicClient.estimateGas({
-          account,
-          to: SWITCH_ADDRESS,
-          data,
-          value: BigInt(0),
-        });
+      // Estimate gas via public client
+      const estimatedGas = await publicClient.estimateGas({
+        account,
+        to: SWITCH_ADDRESS,
+        data,
+        value: BigInt(0),
+      });
+      console.log(
+        "Txn args:",
+        LIGHTBULB_ADDRESS,
+        threshold,
+        reporters,
+        adapters
+      );
       const hash = await client.writeContract({
         address: SWITCH_ADDRESS,
         abi: SwitchAbi,
         functionName: "turnOnLightBulb",
-        args: [LIGHTBULB_ADDRESS, reporters, adapters],
+        args: [LIGHTBULB_ADDRESS, threshold, reporters, adapters],
         value: BigInt(0),
-          chain: arbitrumSepolia,
-          account,
+        chain: arbitrumSepolia,
+        account,
         gas: estimatedGas,
       });
       setTxHash(hash);

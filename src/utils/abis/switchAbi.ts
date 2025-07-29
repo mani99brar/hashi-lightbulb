@@ -45,22 +45,14 @@ export const SwitchAbi = [
   {
     inputs: [
       {
-        internalType: "uint256",
-        name: "_threshold",
-        type: "uint256",
-      },
-    ],
-    name: "setThreshold",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
         internalType: "address",
         name: "_targetAddress",
         type: "address",
+      },
+      {
+        internalType: "uint256",
+        name: "_threshold",
+        type: "uint256",
       },
       {
         internalType: "contract IReporter[]",

@@ -49,7 +49,7 @@ export function Header({account, setAccount}: {
 
   return (
     <header className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-      <h1 className="text-2xl font-bold">Cross Chain Lightbulb</h1>
+      <h1 className="text-2xl font-bold">Hashi Lightbulb</h1>
       <button
         onClick={connectWallet}
         className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
