@@ -1,7 +1,7 @@
 // src/components/Header.tsx
 "use client"; // if you’re in a Next.js App Router—ensures this file only runs on the client
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { getWalletClient } from "@/utils/viemClient";
 import { Address } from "viem";
 

@@ -16,7 +16,7 @@ export function LightbulbStatusDialog({
   const [address, setAddress] = useState<string>("");
 
   // current lightbulb status
-  const { isOn, loading, error, refetch } = useLightBulb(address as Address);
+  const { isOn, refetch } = useLightBulb(address as Address);
 
   // fetch connected address on mount
   useEffect(() => {

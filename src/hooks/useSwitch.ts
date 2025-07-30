@@ -63,8 +63,8 @@ export function useSwitch(): UseSwitchReturn {
       setTxHash(hash);
       setStatus("success");
       return hash;
-    } catch (e: any) {
-      setError(e?.message ?? String(e));
+    } catch (e) {
+      setError(String(e));
       setStatus("error");
       throw e;
     }
