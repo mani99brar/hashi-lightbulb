@@ -14,7 +14,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
+    --background: rgb(48, 51, 152);
     --foreground: #ededed;
   }
 }
@@ -24,3 +24,44 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+
+.bulb
+{
+    bottom: calc(75% - 100px);
+    left: calc(50% - 38px);
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    background: #7e7e7e;
+    /*background: url('…');*/
+    border-radius: 50%;
+    background-size: cover;
+    z-index: 2;
+}
+.body.on .bulb
+{
+    background: #fff;
+    box-shadow:
+      0 0 50px #ffff00,
+      0 0 100px #ffff00,
+      0 0 150px #ffff00,
+      0 0 280px #ffff00,
+      0 0 250px #ffff00,
+      0 0 300px #ffff00,
+      0 0 350px #ffff00;
+}
+
+/* …all the rest of your rules… */
+
+.wire
+{
+    position: absolute;
+    left: 50%;
+    bottom: 75%;
+    width: 4px;
+    height: 100%;
+    background: #000;
+    z-index: 2;
+}
+

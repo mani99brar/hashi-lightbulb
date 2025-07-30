@@ -1,10 +1,9 @@
 import { Header } from "@/components/Header";
 import { LightbulbControls } from "@/components/LightBulbControls";
-import { HistoryTable, HistoryEntry } from "@/components/HistoryDialog";
-import { LightbulbStatusDialog } from "@/components/LightBulbStatus";
 import { Geist, Geist_Mono } from "next/font/google";
 import { useEffect, useState } from "react";
 import { Address } from "viem";
+import { LightbulbStatusDialog } from "@/components/LightBulbStatus";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -17,9 +16,9 @@ const geistMono = Geist_Mono({
 });
 
 export default function Home() {
-  const [ history, setHistory ] = useState<HistoryEntry[]>([]);
   const [isWindowLoaded, setIsWindowLoaded] = useState(false);
   const [account, setAccount] = useState<Address | null>(null);
+  const [isOn, setIsOn] = useState<boolean>(false);
 
   useEffect(() => {
     console.log(window.ethereum);
@@ -35,43 +34,27 @@ export default function Home() {
           console.error("User denied account access or error occurred:", error);
         }
       } else {
-        console.error("Ethereum provider not found. Make sure MetaMask is installed.");
+        console.error(
+          "Ethereum provider not found. Make sure MetaMask is installed."
+        );
       }
     };
     initializeWalletClient();
   }, []);
 
-  useEffect(() => {
-    const stored = localStorage.getItem("lightbulbHistory");
-    if (stored) {
-      try {
-        const parsed: HistoryEntry[] = JSON.parse(stored);
-        setHistory(parsed);
-      } catch (e) {
-        console.error("Failed to parse history from localStorage", e);
-      }
-    }
-  }, [setHistory]);
-
-
   return (
     <div
-      className={`${geistSans.className} ${geistMono.className} font-sans grid grid-rows-[20px_1fr_20px] items-center min-h-screen p-8 pb-20 gap-16 sm:p-20`}
+      className={`${geistSans.className} ${geistMono.className} font-sans h-screen p-8 sm:p-20`}
     >
       {isWindowLoaded && (
         <>
           <Header account={account} setAccount={setAccount} />
-          <div className="flex w-full justify-around">
-            <LightbulbControls account={account} setHistory={setHistory} />
-            <LightbulbStatusDialog
-            />
+          <div className="flex flex-col items-center justify-center h-full">
+            <LightbulbStatusDialog setIsOn={setIsOn} />
+            <div className="flex w-full justify-around">
+              <LightbulbControls account={account} isOn={isOn} />
+            </div>
           </div>
-          {history.length > 0 && (
-            <HistoryTable
-              account={account!}
-              history={history}
-            />
-          )}
         </>
       )}
     </div>

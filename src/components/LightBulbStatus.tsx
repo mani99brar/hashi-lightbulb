@@ -1,26 +1,25 @@
 import React, { useState, useEffect } from "react";
 import { getWalletClient } from "@/utils/viemClient";
-import { fetchLightBulbToggledEvents } from "@/utils/logs";
 import { useLightBulb } from "@/hooks/useLigthBulb";
 import { Address } from "viem";
+import Lightbulb from "./LightBulb";
 
 /**
  * Always-visible dialog to check and display lightbulb on/off status.
  */
-export function LightbulbStatusDialog() {
+export function LightbulbStatusDialog({
+  setIsOn,
+}: {
+  setIsOn: (isOn: boolean) => void;
+}) {
   // connected wallet address
   const [address, setAddress] = useState<string>("");
-  // optional override input
-  const [inputAddress, setInputAddress] = useState<string>("");
+
   // current lightbulb status
   const { isOn, loading, error, refetch } = useLightBulb(address as Address);
 
   // fetch connected address on mount
   useEffect(() => {
-    (async () => {
-      const events = await fetchLightBulbToggledEvents();
-      console.log("Fetched events:", events);
-    })();
     const client = getWalletClient();
     if (client) {
       client.getAddresses().then((addrs) => {
@@ -29,72 +28,25 @@ export function LightbulbStatusDialog() {
     }
   }, []);
 
-  /**
-   * Trigger a status check for the given address (or connected address if none)
-   */
-  const handleCheckStatus = async () => {
-    const addrToCheck = inputAddress.trim() || address;
-    if (!addrToCheck) {
-      alert("Please connect your wallet or enter an address");
-      return;
-    }
-    try {
+  useEffect(() => {
+    if (!address || isOn) return;
+    refetch(); // initial fetch
+    const handle = setInterval(() => {
       refetch();
-    } catch (err) {
-      console.error("Failed to fetch status", err);
-      alert("Error checking lightbulb status");
+    }, 10_000); // 30 000 ms = 10 s
+    return () => clearInterval(handle);
+  }, [address, refetch]);
+
+  useEffect(() => {
+    if (isOn !== null && isOn !== undefined) {
+      setIsOn(isOn);
     }
-  };
+  }, [isOn, setIsOn]);
 
   return (
-    <div className="bg-black border-2 border-white rounded-lg shadow-lg w-1/2 p-6 mx-auto flex flex-col justify-between">
-      <div>
-        <h2 className="text-xl font-semibold mb-4">Lightbulb Status</h2>
-
-        {/* Address Input */}
-        <div className="mb-4">
-          <label
-            htmlFor="address"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            Address
-          </label>
-          <input
-            id="address"
-            type="text"
-            value={inputAddress}
-            onChange={(e) => setInputAddress(e.target.value)}
-            placeholder={address || "Connect wallet to auto-fill"}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
-          />
-        </div>
-
-        {/* Check Status Button */}
-        <div className="mb-4">
-          <button
-            onClick={handleCheckStatus}
-            className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-          >
-            {loading ? "Checking..." : "Check Status"}
-          </button>
-        </div>
-      </div>
+    <div>
       {/* Status Display */}
-      <p
-        className={`text-4xl font-large ${
-          isOn === null
-            ? "text-gray-400"
-            : isOn
-            ? "text-green-600"
-            : "text-red-600"
-        }`}
-      >
-        {isOn === null
-          ? "No Status"
-          : isOn
-          ? "The lightbulb is ON"
-          : "The lightbulb is OFF"}
-      </p>
+      <Lightbulb isOn={isOn!} />
     </div>
   );
 }

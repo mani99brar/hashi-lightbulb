@@ -3,6 +3,11 @@ export const SwitchAbi = [
     inputs: [
       {
         internalType: "address",
+        name: "_veaInbox",
+        type: "address",
+      },
+      {
+        internalType: "address",
         name: "_lightBulb",
         type: "address",
       },
@@ -14,19 +19,19 @@ export const SwitchAbi = [
     anonymous: false,
     inputs: [
       {
-        indexed: true,
-        internalType: "uint256",
+        indexed: false,
+        internalType: "uint64",
         name: "messageId",
-        type: "uint256",
+        type: "uint64",
       },
       {
-        indexed: true,
+        indexed: false,
         internalType: "address",
         name: "lightBulbOwner",
         type: "address",
       },
     ],
-    name: "LightBulbToggled",
+    name: "lightBulbToggled",
     type: "event",
   },
   {
@@ -43,39 +48,18 @@ export const SwitchAbi = [
     type: "function",
   },
   {
-    inputs: [
-      {
-        internalType: "address",
-        name: "_targetAddress",
-        type: "address",
-      },
-      {
-        internalType: "uint256",
-        name: "_threshold",
-        type: "uint256",
-      },
-      {
-        internalType: "contract IReporter[]",
-        name: "_reporters",
-        type: "address[]",
-      },
-      {
-        internalType: "contract IAdapter[]",
-        name: "_adapters",
-        type: "address[]",
-      },
-    ],
+    inputs: [],
     name: "turnOnLightBulb",
     outputs: [],
-    stateMutability: "payable",
+    stateMutability: "nonpayable",
     type: "function",
   },
   {
     inputs: [],
-    name: "yaho",
+    name: "veaInbox",
     outputs: [
       {
-        internalType: "contract IYaho",
+        internalType: "contract IVeaInbox",
         name: "",
         type: "address",
       },
