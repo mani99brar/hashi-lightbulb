@@ -6,7 +6,8 @@ import { useSwitch } from "@/hooks/useSwitch";
 import { HistoryEntry } from "./HistoryDialog";
 import { publicClient } from "@/utils/viemClient";
 import { YahoAbi } from "@/utils/abis/yahoAbi";
-import { encodeAbiParameters } from "viem";
+import { encodeAbiParameters, decodeEventLog } from "viem";
+import type { MessageDispatchedLog } from "@/utils/types";
 
 type Bridge = "LayerZero" | "CCIP" | "Vea";
 
@@ -77,18 +78,28 @@ export function LightbulbControls({
 
   useEffect(() => {
     if (txHash) {
-      let currentNonce = BigInt(0);
       (async () => {
-        // Fetch current nonce from Yaho
-        currentNonce = (await publicClient.readContract({
-          address: YAHO_ADDRESS,
-          abi: YahoAbi,
-          functionName: "currentNonce",
-          args: [],
-        })) as bigint;
-        console.log("Current nonce on Yaho:", currentNonce);
-        const messageNonce = Number(currentNonce) - 1;
-        console.log("Message nonce for new entry:", messageNonce);
+        const receipt = await publicClient.waitForTransactionReceipt({
+          hash: txHash as `0x${string}`,
+          pollingInterval: 1_000,
+          timeout: 60_000,
+        });
+        const yahoLogs = receipt.logs.filter(
+          (log) => log.address.toLowerCase() === YAHO_ADDRESS.toLowerCase()
+        );
+        let messageNonce: number | undefined = 0;
+        try {
+          const decoded = decodeEventLog({
+            abi: YahoAbi,
+            data: yahoLogs[0].data,
+            topics: yahoLogs[0].topics,
+          }) as unknown as MessageDispatchedLog;
+          if (decoded.eventName === "MessageDispatched") {
+            messageNonce = Number(decoded.args.message.nonce);
+          }
+        } catch (err) {
+          console.error("Failed to decode Yaho log:", err);
+        }
         const bridgeEntry: HistoryEntry = {
           nonce: messageNonce.toString(),
           data: encodeAbiParameters([{ type: "address" }], [account!]),

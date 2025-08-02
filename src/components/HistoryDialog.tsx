@@ -54,7 +54,7 @@ export function HistoryTable({ account, history }: HistoryTableProps) {
     try {
       // Build the Message struct for executeMessages
       const message = {
-        nonce: BigInt(58),
+        nonce: entry.nonce,
         data: entry.data,
         targetChainId: 10200,
         threshold: entry.threshold,
