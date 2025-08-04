@@ -25,8 +25,8 @@ export const CCIP_ADDRESS: HashiAddress = {
 };
 
 export const LAYER_ZERO_ADDRESS: HashiAddress = {
-  adapter: "0x746dfa0251A31e587E97bBe0c58ED67A343280Df",
-  reporter: "0x288dA9f5b01D9118AD0A1Fb998C1295fF1cf5c80",
+  adapter: "0xfA08cfe2530c01045D953f824b836f6757670cD0",
+  reporter: "0x3E7b05c278d33Ce8f9058282CF628f135263d0b8",
 };
 
 export const VEA_ADDRESS: HashiAddress = {
