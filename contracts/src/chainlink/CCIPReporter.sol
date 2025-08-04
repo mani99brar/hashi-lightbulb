@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 pragma solidity ^0.8.20;
 
-import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
-import { IRouterClient } from "@chainlink/interfaces/IRouterClient.sol";
-import { Client } from "@chainlink/libraries/Client.sol";
-import { Reporter } from "@hashi/adapters/Reporter.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {IRouterClient} from "@chainlink/interfaces/IRouterClient.sol";
+import {Client} from "@chainlink/libraries/Client.sol";
+import {Reporter} from "@hashi/adapters/Reporter.sol";
 
 contract CCIPReporter is Reporter, Ownable {
     string public constant PROVIDER = "ccip";
@@ -33,12 +33,11 @@ contract CCIPReporter is Reporter, Ownable {
         emit FeeSet(fee_);
     }
 
-    function _dispatch(
-        uint256 targetChainId,
-        address adapter,
-        uint256[] memory ids,
-        bytes32[] memory hashes
-    ) internal override returns (bytes32) {
+    function _dispatch(uint256 targetChainId, address adapter, uint256[] memory ids, bytes32[] memory hashes)
+        internal
+        override
+        returns (bytes32)
+    {
         uint64 targetChainSelector = chainSelectors[targetChainId];
         if (targetChainSelector == 0) revert ChainSelectorNotAvailable();
         bytes memory payload = abi.encode(ids, hashes);
@@ -46,17 +45,16 @@ contract CCIPReporter is Reporter, Ownable {
             receiver: abi.encode(adapter),
             data: payload,
             tokenAmounts: new Client.EVMTokenAmount[](0), // Empty array - no tokens are transferred
-            extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({ gasLimit: 200_000, strict: false })),
+            extraArgs: Client._argsToBytes(Client.EVMExtraArgsV1({gasLimit: 200_000, strict: false})),
             feeToken: address(0) // Pay fees with native
         });
 
         uint256 fees = CCIP_ROUTER.getFee(targetChainSelector, message);
 
         require(fees < address(this).balance, "Insufficient fee provided");
-        CCIP_ROUTER.ccipSend{ value: fees }(targetChainSelector, message);
+        CCIP_ROUTER.ccipSend{value: fees}(targetChainSelector, message);
         return bytes32(0);
     }
 
     receive() external payable {}
-
 }

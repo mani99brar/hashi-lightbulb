@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 pragma solidity ^0.8.20;
 
-import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
-import { CCIPReceiver } from "@chainlink/applications/CCIPReceiver.sol";
-import { Client } from "@chainlink/libraries/Client.sol";
-import { Adapter } from "@hashi/adapters/Adapter.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {CCIPReceiver} from "@chainlink/applications/CCIPReceiver.sol";
+import {Client} from "@chainlink/libraries/Client.sol";
+import {Adapter} from "@hashi/adapters/Adapter.sol";
 
 contract CCIPAdapter is Adapter, Ownable, CCIPReceiver {
     string public constant PROVIDER = "ccip";
@@ -32,5 +32,4 @@ contract CCIPAdapter is Adapter, Ownable, CCIPReceiver {
         (uint256[] memory ids, bytes32[] memory hashes) = abi.decode(message.data, (uint256[], bytes32[]));
         _storeHashes(sourceChainId, ids, hashes);
     }
-
 }

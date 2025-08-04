@@ -6,25 +6,25 @@
  *  @bounties: []
  *  @deployments: []
  */
-
 pragma solidity ^0.8.18;
 
 /**
  * @title Lightbulb
  * @dev A lightbulb controlled by a cross-chain switch connected with the Vea bridge.
- **/
- 
-contract Lightbulb{
-    event LightBulbTurnedOn(address indexed lightBulbOwner, uint256  indexed messageId);
+ *
+ */
+contract Lightbulb {
+    event LightBulbTurnedOn(address indexed lightBulbOwner, uint256 indexed messageId);
+
     address owner;
-    address public immutable YARU = 0x639c26C9F45C634dD14C599cBAa27363D4665C53; 
+    address public immutable YARU = 0x639c26C9F45C634dD14C599cBAa27363D4665C53;
     uint256 public SOURCE_CHAIN_ID = 421614;
-    address public  lightBulbSwitch; // The switch on arbitrum that controls this lightbulb.
-    mapping (address=>bool) public lightBulbIsOn;
+    address public lightBulbSwitch; // The switch on arbitrum that controls this lightbulb.
+    mapping(address => bool) public lightBulbIsOn;
     bool switchOn = true;
-    
-    modifier onlyOwner {
-        require(msg.sender==owner);
+
+    modifier onlyOwner() {
+        require(msg.sender == owner);
         _;
     }
 
@@ -33,23 +33,23 @@ contract Lightbulb{
     }
 
     function setLightBulbSwitch(address _lightBulbSwitch) external {
-        require(msg.sender==owner);
+        require(msg.sender == owner);
         lightBulbSwitch = _lightBulbSwitch;
     }
 
-    function flipSwitch(bool _switchOn) onlyOwner external{
+    function flipSwitch(bool _switchOn) external onlyOwner {
         switchOn = _switchOn;
     }
 
-     /// @dev Function that gets triggered when the message is relayed, called by Yaru contract
+    /// @dev Function that gets triggered when the message is relayed, called by Yaru contract
     /// @param chainId chainId of the chain where message is sending from
     /// @param sender sender contract
     /// @param threshold threshold of the message that should be met by adapters
     /// @param adapters an array of adapters to check the threshold with
     /// @param data abi-encoded message
-    /// @return 
+    /// @return
     function onMessage(
-        uint256 messageId, 
+        uint256 messageId,
         uint256 chainId,
         address sender,
         uint256 threshold,
@@ -59,12 +59,12 @@ contract Lightbulb{
         require(msg.sender == YARU, "only called by Yaru");
         require(chainId == SOURCE_CHAIN_ID, "invalid source chain ID");
         require(sender == lightBulbSwitch, "invalid sender address from source chain");
-    
+
         // Decode the message and store it
         (address lightBulbOwner) = abi.decode(data, (address));
         lightBulbIsOn[lightBulbOwner] = true;
 
-        emit LightBulbTurnedOn(lightBulbOwner,messageId);
+        emit LightBulbTurnedOn(lightBulbOwner, messageId);
         return "";
     }
 
