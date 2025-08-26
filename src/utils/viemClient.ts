@@ -39,7 +39,7 @@ export function getWalletClient() {
     console.warn("No injected Ethereum provider found");
     return null;
   }
-  // Do NOT pin a chain here; bind to provider and extend with public actions if desired.
+
   _walletClient = createWalletClient({
     chain: DEFAULT_CHAIN,
     transport: custom(window.ethereum),
