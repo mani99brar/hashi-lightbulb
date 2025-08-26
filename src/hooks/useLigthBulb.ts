@@ -1,6 +1,6 @@
 // hooks/useLightBulb.ts
 import { useState, useEffect, useCallback } from "react";
-import { chiadoPublicClient } from "@/utils/viemClient";
+import { getPublic } from "@/utils/viemClient";
 import type { Address } from "viem";
 import { LightbulbAbi } from "@/utils/abis/lightbulbAbi";
 import { LIGHTBULB_ADDRESS } from "@/utils/consts";
@@ -21,37 +21,41 @@ interface UseLightBulbReturn {
  *
  * @param owner the address whose bulb state you want to read
  */
-export function useLightBulb(owner?: Address): UseLightBulbReturn {
-  const [isOn, setIsOn] = useState<boolean|null>(null);
+export function useLightBulb(
+  chainId: number,
+  owner?: Address
+): UseLightBulbReturn {
+  const [isOn, setIsOn] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>();
 
-    const fetchState = useCallback(async () => {
-      console.log("Fetching lightbulb state for:", owner);
-        if (!owner) {
-        console.warn("No owner address provided, cannot fetch state");
+  const fetchState = useCallback(async () => {
+    console.log("Fetching lightbulb state for:", owner);
+    if (!owner) {
+      console.warn("No owner address provided, cannot fetch state");
       setIsOn(null);
       return;
     }
     setLoading(true);
     setError(undefined);
     try {
-      const result = await chiadoPublicClient.readContract({
+      const publicClient = getPublic(chainId);
+      const result = await publicClient.readContract({
         address: LIGHTBULB_ADDRESS,
         abi: LightbulbAbi,
         functionName: "lightBulbIsOn",
         args: [owner],
       });
-        console.log("Lightbulb state:", result);
+      console.log("Lightbulb state:", result);
       setIsOn(result as boolean);
     } catch (e: any) {
-        console.error("Failed to fetch lightbulb state", e);
+      console.error("Failed to fetch lightbulb state", e);
       setError(e.message || String(e));
       setIsOn(null);
     } finally {
       setLoading(false);
     }
-        console.log("FETCHED");
+    console.log("FETCHED");
   }, [owner]);
 
   // auto‐fetch on owner change

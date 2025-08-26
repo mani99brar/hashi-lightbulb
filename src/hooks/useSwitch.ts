@@ -1,10 +1,14 @@
 import { useState } from "react";
-import { getWalletClient, publicClient } from "@/utils/viemClient";
 import type { Address } from "viem";
-import { SwitchAbi } from "@/utils/abis/switchAbi";
-import { HashiAddress,SWITCH_ADDRESS, LIGHTBULB_ADDRESS } from "@/utils/consts";
 import { arbitrumSepolia } from "viem/chains";
 import { encodeFunctionData } from "viem";
+import { getWalletClient, ensureChain } from "@/utils/viemClient";
+import { SwitchAbi } from "@/utils/abis/switchAbi";
+import {
+  HashiAddress,
+  SWITCH_ADDRESS,
+  LIGHTBULB_ADDRESS,
+} from "@/utils/consts";
 
 export type TxnStatus = "idle" | "pending" | "success" | "error";
 
@@ -51,9 +55,12 @@ export function useSwitch(): UseSwitchReturn {
         functionName: "turnOnLightBulb",
         args: [LIGHTBULB_ADDRESS, threshold, reporters, adapters],
       });
+      const { publicClient: arbSepoliaPublicClient } = await ensureChain(
+        arbitrumSepolia.id
+      );
 
       // Estimate gas via public client
-      const estimatedGas = await publicClient.estimateGas({
+      const estimatedGas = await arbSepoliaPublicClient.estimateGas({
         account,
         to: SWITCH_ADDRESS,
         data,

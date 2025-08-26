@@ -1,10 +1,11 @@
 // src/components/LightbulbControls.tsx
 import React, { useEffect, useState } from "react";
 import { Address } from "viem";
+import { arbitrumSepolia } from "viem/chains";
 import { HashiAddress, BridgeAddresses, YAHO_ADDRESS } from "@/utils/consts";
 import { useSwitch } from "@/hooks/useSwitch";
 import { HistoryEntry } from "./HistoryDialog";
-import { publicClient } from "@/utils/viemClient";
+import { ensureChain } from "@/utils/viemClient";
 import { YahoAbi } from "@/utils/abis/yahoAbi";
 import { encodeAbiParameters, decodeEventLog } from "viem";
 import type { MessageDispatchedLog } from "@/utils/types";
@@ -79,7 +80,10 @@ export function LightbulbControls({
   useEffect(() => {
     if (txHash) {
       (async () => {
-        const receipt = await publicClient.waitForTransactionReceipt({
+        const { publicClient: arbSepoliaPublicClient } = await ensureChain(
+          arbitrumSepolia.id
+        );
+        const receipt = await arbSepoliaPublicClient.waitForTransactionReceipt({
           hash: txHash as `0x${string}`,
           pollingInterval: 1_000,
           timeout: 60_000,

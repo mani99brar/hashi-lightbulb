@@ -2,18 +2,30 @@ import React, { useState, useEffect } from "react";
 import { getWalletClient } from "@/utils/viemClient";
 import { fetchLightBulbToggledEvents } from "@/utils/logs";
 import { useLightBulb } from "@/hooks/useLigthBulb";
-import { Address } from "viem";
+import { Address, Chain } from "viem";
+import { gnosisChiado, sepolia } from "viem/chains";
+
+const LIGHTBULB_CHAINS: Chain[] = [gnosisChiado, sepolia];
 
 /**
  * Always-visible dialog to check and display lightbulb on/off status.
  */
-export function LightbulbStatusDialog() {
-  // connected wallet address
-  const [address, setAddress] = useState<string>("");
+export function LightbulbStatusDialog({
+  address,
+}: {
+  address: Address | null;
+}) {
+  // Lightbulb lightbulbChainId
+  const [lightbulbChainId, setLightbulbChainId] = useState<number>(
+    gnosisChiado.id
+  );
   // optional override input
   const [inputAddress, setInputAddress] = useState<string>("");
   // current lightbulb status
-  const { isOn, loading, error, refetch } = useLightBulb(address as Address);
+  const { isOn, loading, error, refetch } = useLightBulb(
+    lightbulbChainId,
+    address as Address
+  );
 
   // fetch connected address on mount
   useEffect(() => {
@@ -21,12 +33,7 @@ export function LightbulbStatusDialog() {
       const events = await fetchLightBulbToggledEvents();
       console.log("Fetched events:", events);
     })();
-    const client = getWalletClient();
-    if (client) {
-      client.getAddresses().then((addrs) => {
-        if (addrs?.length) setAddress(addrs[0]);
-      });
-    }
+    console.log("Connected address:", address);
   }, []);
 
   /**
@@ -46,11 +53,35 @@ export function LightbulbStatusDialog() {
     }
   };
 
+  const handleLightbulbChain = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const nextId = Number(e.target.value);
+    if (Number.isFinite(nextId)) {
+      setLightbulbChainId(nextId);
+    }
+  };
+
   return (
     <div className="bg-black border-2 border-white rounded-lg shadow-lg w-1/2 p-6 mx-auto flex flex-col justify-between">
       <div>
-        <h2 className="text-xl font-semibold mb-4">Lightbulb Status</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold">Lightbulb Status</h2>
 
+          {/* Lightbulb Chain Selector */}
+          <label className="block text-sm">
+            Lightbulb chain
+            <select
+              value={lightbulbChainId}
+              onChange={handleLightbulbChain}
+              className="ml-2 px-2 py-1 border rounded"
+            >
+              {LIGHTBULB_CHAINS.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
         {/* Address Input */}
         <div className="mb-4">
           <label

@@ -1,6 +1,6 @@
 import React from "react";
 import { Hex, Address } from "viem";
-import { getWalletClient, chiadoPublicClient } from "@/utils/viemClient";
+import { getWalletClient, ensureChain } from "@/utils/viemClient";
 import {
   HashiAddress,
   LIGHTBULB_ADDRESS,
@@ -38,11 +38,12 @@ export interface HistoryEntry {
 }
 
 interface HistoryTableProps {
-  account: Address;
+  chainId: number;
+  account: Address | null;
   history: HistoryEntry[];
 }
 
-export function HistoryTable({ account, history }: HistoryTableProps) {
+export function HistoryTable({ chainId, account, history }: HistoryTableProps) {
   const onExecute = async (entry: HistoryEntry) => {
     const client = getWalletClient();
     if (!client) {
@@ -73,8 +74,8 @@ export function HistoryTable({ account, history }: HistoryTableProps) {
         chain: gnosisChiado,
         account,
       });
-
-      const receipt = await chiadoPublicClient.waitForTransactionReceipt({
+      const { publicClient } = await ensureChain(chainId);
+      const receipt = await publicClient.waitForTransactionReceipt({
         hash: txHash,
       });
       console.log("Receipt received:", receipt);

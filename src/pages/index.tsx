@@ -1,10 +1,11 @@
+import { useEffect, useState } from "react";
+import { Address } from "viem";
+import { arbitrumSepolia } from "viem/chains";
 import { Header } from "@/components/Header";
 import { LightbulbControls } from "@/components/LightBulbControls";
 import { HistoryTable, HistoryEntry } from "@/components/HistoryDialog";
 import { LightbulbStatusDialog } from "@/components/LightBulbStatus";
 import { Geist, Geist_Mono } from "next/font/google";
-import { useEffect, useState } from "react";
-import { Address } from "viem";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -17,12 +18,14 @@ const geistMono = Geist_Mono({
 });
 
 export default function Home() {
-  const [ history, setHistory ] = useState<HistoryEntry[]>([]);
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [isWindowLoaded, setIsWindowLoaded] = useState(false);
   const [account, setAccount] = useState<Address | null>(null);
+  const [walletChainId, setWalletChainId] = useState<number>(
+    arbitrumSepolia.id
+  ); // Arbitrum Sepolia default
 
   useEffect(() => {
-    console.log(window.ethereum);
     // Ensure the wallet client is initialized when the app loads
     const initializeWalletClient = async () => {
       // Ensurre window.ethereum is available
@@ -35,14 +38,16 @@ export default function Home() {
           console.error("User denied account access or error occurred:", error);
         }
       } else {
-        console.error("Ethereum provider not found. Make sure MetaMask is installed.");
+        console.error(
+          "Ethereum provider not found. Make sure MetaMask is installed."
+        );
       }
     };
     initializeWalletClient();
   }, []);
 
   useEffect(() => {
-    const stored = localStorage.getItem("lightbulbHistory");
+    const stored = localStorage.getItem(`lightbulbHistory-${walletChainId}`);
     if (stored) {
       try {
         const parsed: HistoryEntry[] = JSON.parse(stored);
@@ -51,8 +56,7 @@ export default function Home() {
         console.error("Failed to parse history from localStorage", e);
       }
     }
-  }, [setHistory]);
-
+  }, [setHistory, walletChainId]);
 
   return (
     <div
@@ -60,17 +64,15 @@ export default function Home() {
     >
       {isWindowLoaded && (
         <>
-          <Header account={account} setAccount={setAccount} />
+          <Header
+            {...{ account, setAccount, walletChainId, setWalletChainId }}
+          />
           <div className="flex w-full justify-around">
-            <LightbulbControls account={account} setHistory={setHistory} />
-            <LightbulbStatusDialog
-            />
+            <LightbulbControls {...{ account, setHistory }} />
+            <LightbulbStatusDialog address={account} />
           </div>
           {history.length > 0 && (
-            <HistoryTable
-              account={account!}
-              history={history}
-            />
+            <HistoryTable {...{ chainId: walletChainId, account, history }} />
           )}
         </>
       )}

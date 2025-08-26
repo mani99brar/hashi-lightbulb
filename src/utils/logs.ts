@@ -1,6 +1,7 @@
-import { publicClient } from "@/utils/viemClient";
+import { decodeEventLog, Address } from "viem";
+import { arbitrumSepolia } from "viem/chains";
+import { ensureChain } from "@/utils/viemClient";
 import { SwitchAbi } from "@/utils/abis/switchAbi";
-import { parseAbiItem, decodeEventLog, Address } from "viem";
 import { SWITCH_ADDRESS } from "@/utils/consts";
 
 /**
@@ -17,19 +18,21 @@ export interface LightBulbToggledEvent {
  * @param fromBlock - the starting block (inclusive)
  * @param toBlock - optional ending block (inclusive)
  */
-export async function fetchLightBulbToggledEvents(
-): Promise<LightBulbToggledEvent[]> {
+export async function fetchLightBulbToggledEvents(): Promise<
+  LightBulbToggledEvent[]
+> {
+  const { publicClient: arbSepoliaPublicClient } = await ensureChain(
+    arbitrumSepolia.id
+  );
+  // Retrieve raw logs
+  const latestBlock = await arbSepoliaPublicClient.getBlockNumber();
+  console.log("Latest block:", latestBlock);
+  const logs = await arbSepoliaPublicClient.getLogs({
+    address: SWITCH_ADDRESS,
+    fromBlock: latestBlock - BigInt(499),
+    toBlock: latestBlock,
+  });
 
-    // Retrieve raw logs
-    const latestBlock = await publicClient.getBlockNumber();
-    console.log("Latest block:", latestBlock);
-    const logs = await publicClient.getLogs({
-        address: SWITCH_ADDRESS,
-        fromBlock: latestBlock - BigInt(499),
-        toBlock: latestBlock
-    });
-    console.log(publicClient.chain.id, SWITCH_ADDRESS);
-  console.log("Raw logs:", logs);
   // Decode each log entry
   return logs.map((log) => {
     const { args } = decodeEventLog({
