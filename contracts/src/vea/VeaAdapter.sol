@@ -38,33 +38,8 @@ contract VeaAdapter is IReceiverGateway, Adapter {
         return VEA_OUTBOX;
     }
 
-    function storeHashes(address source, uint256[] memory ids, bytes32[] memory hashes)
-        external
-        onlyFromAuthenticatedVeaSender(source)
-    {
-        if (ids.length != hashes.length) revert ArrayLengthMissmatch();
+    function receiveMessage(address sourceMsgSender, bytes calldata data) external override onlyFromAuthenticatedVeaSender(sourceMsgSender) {
+        (uint256[] memory ids, bytes32[] memory hashes) = abi.decode(data, (uint256[], bytes32[]));
         _storeHashes(SOURCE_CHAIN_ID, ids, hashes);
-    }
-
-    fallback() external {
-        bytes calldata data = msg.data;
-
-        bytes4 selector = bytes4(data[:4]);
-        bytes4 STORE_HASHES_SEL = bytes4(keccak256("storeHashes(uint256[],bytes32[])"));
-        require(selector == STORE_HASHES_SEL, "Invalid selector");
-
-        bytes32 padded;
-        assembly {
-            // calldataload(offset) loads 32 bytes starting at offset
-            // data.offset is the location of the first byte of `data`
-            padded := calldataload(add(data.offset, 4))
-        }
-        address reporterAddr = address(uint160(uint256(padded)));
-        require(reporterAddr == REPORTER, "Invalid reporter");
-
-        bytes calldata tail = data[4 + 32:];
-
-        (uint256[] memory ids, bytes32[] memory hashes) = abi.decode(tail, (uint256[], bytes32[]));
-        _storeHashes(uint256(SOURCE_CHAIN_ID), ids, hashes);
     }
 }

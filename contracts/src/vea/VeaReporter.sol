@@ -12,7 +12,6 @@ contract VeaReporter is ISenderGateway, Reporter {
     IVeaInbox public immutable VEA_INBOX;
     address public immutable ADAPTER;
     uint256 public immutable EXPECTED_TARGET_CHAIN_ID;
-    bytes4 STORE_HASHES_SEL = bytes4(keccak256("storeHashes(uint256[],bytes32[])"));
 
     error InvalidAdapter(address adapter, address expectedAdapter);
     error InvalidTargetChainId(uint256 targetChainId, uint256 expectedTargetChainId);
@@ -46,7 +45,7 @@ contract VeaReporter is ISenderGateway, Reporter {
             revert InvalidTargetChainId(targetChainId, EXPECTED_TARGET_CHAIN_ID);
         }
         if (adapter != ADAPTER) revert InvalidAdapter(adapter, ADAPTER);
-        uint64 msgId = VEA_INBOX.sendMessage(ADAPTER, STORE_HASHES_SEL, abi.encodePacked(ids, hashes));
+        uint64 msgId = VEA_INBOX.sendMessage(ADAPTER, abi.encode(ids, hashes));
         return bytes32(uint256(msgId));
     }
 }
