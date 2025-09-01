@@ -17,7 +17,7 @@ contract Lightbulb {
     event LightBulbTurnedOn(address indexed lightBulbOwner, uint256 indexed messageId);
 
     address owner;
-    address public immutable YARU = 0x639c26C9F45C634dD14C599cBAa27363D4665C53;
+    address public yaru;
     uint256 public SOURCE_CHAIN_ID = 421614;
     address public lightBulbSwitch; // The switch on arbitrum that controls this lightbulb.
     mapping(address => bool) public lightBulbIsOn;
@@ -28,8 +28,9 @@ contract Lightbulb {
         _;
     }
 
-    constructor(address _owner) {
+    constructor(address _owner, address _yaru) {
         owner = _owner;
+        yaru = _yaru;
     }
 
     function setLightBulbSwitch(address _lightBulbSwitch) external {
@@ -56,7 +57,7 @@ contract Lightbulb {
         address[] memory adapters,
         bytes memory data
     ) external returns (bytes memory) {
-        require(msg.sender == YARU, "only called by Yaru");
+        require(msg.sender == yaru, "only called by Yaru");
         require(chainId == SOURCE_CHAIN_ID, "invalid source chain ID");
         require(sender == lightBulbSwitch, "invalid sender address from source chain");
 
