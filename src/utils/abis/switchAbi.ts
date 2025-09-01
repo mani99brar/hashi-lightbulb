@@ -1,86 +1,49 @@
 export const SwitchAbi = [
   {
-    inputs: [
-      {
-        internalType: "address",
-        name: "_lightBulb",
-        type: "address",
-      },
-    ],
-    stateMutability: "nonpayable",
-    type: "constructor",
-  },
-  {
-    anonymous: false,
-    inputs: [
-      {
-        indexed: true,
-        internalType: "uint256",
-        name: "messageId",
-        type: "uint256",
-      },
-      {
-        indexed: true,
-        internalType: "address",
-        name: "lightBulbOwner",
-        type: "address",
-      },
-    ],
-    name: "LightBulbToggled",
-    type: "event",
-  },
-  {
-    inputs: [],
-    name: "lightBulb",
-    outputs: [
-      {
-        internalType: "address",
-        name: "",
-        type: "address",
-      },
-    ],
-    stateMutability: "view",
     type: "function",
-  },
-  {
+    name: "turnOnLightBulb",
     inputs: [
+      { name: "_lightBulbChainId", type: "uint32", internalType: "uint32" },
+      { name: "_targetAddress", type: "address", internalType: "address" },
+      { name: "_threshold", type: "uint256", internalType: "uint256" },
       {
-        internalType: "address",
-        name: "_targetAddress",
-        type: "address",
-      },
-      {
-        internalType: "uint256",
-        name: "_threshold",
-        type: "uint256",
-      },
-      {
-        internalType: "contract IReporter[]",
         name: "_reporters",
         type: "address[]",
+        internalType: "contract IReporter[]",
       },
       {
-        internalType: "contract IAdapter[]",
         name: "_adapters",
         type: "address[]",
+        internalType: "contract IAdapter[]",
       },
     ],
-    name: "turnOnLightBulb",
     outputs: [],
     stateMutability: "payable",
-    type: "function",
   },
   {
-    inputs: [],
+    type: "function",
     name: "yaho",
-    outputs: [
+    inputs: [],
+    outputs: [{ name: "", type: "address", internalType: "contract IYaho" }],
+    stateMutability: "view",
+  },
+  {
+    type: "event",
+    name: "LightBulbToggled",
+    inputs: [
       {
-        internalType: "contract IYaho",
-        name: "",
+        name: "messageId",
+        type: "uint256",
+        indexed: true,
+        internalType: "uint256",
+      },
+      {
+        name: "lightBulbOwner",
         type: "address",
+        indexed: true,
+        internalType: "address",
       },
     ],
-    stateMutability: "view",
-    type: "function",
+    anonymous: false,
   },
 ];

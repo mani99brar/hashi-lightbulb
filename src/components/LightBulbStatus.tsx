@@ -12,13 +12,13 @@ const LIGHTBULB_CHAINS: Chain[] = [gnosisChiado, sepolia];
  */
 export function LightbulbStatusDialog({
   address,
+  lightbulbChainId,
+  setLightbulbChainId,
 }: {
   address: Address | null;
+  lightbulbChainId: number;
+  setLightbulbChainId: React.Dispatch<React.SetStateAction<number>>;
 }) {
-  // Lightbulb lightbulbChainId
-  const [lightbulbChainId, setLightbulbChainId] = useState<number>(
-    gnosisChiado.id
-  );
   // optional override input
   const [inputAddress, setInputAddress] = useState<string>("");
   // current lightbulb status
@@ -29,12 +29,8 @@ export function LightbulbStatusDialog({
 
   // fetch connected address on mount
   useEffect(() => {
-    (async () => {
-      const events = await fetchLightBulbToggledEvents();
-      console.log("Fetched events:", events);
-    })();
-    console.log("Connected address:", address);
-  }, []);
+    refetch(lightbulbChainId);
+  }, [lightbulbChainId]);
 
   /**
    * Trigger a status check for the given address (or connected address if none)

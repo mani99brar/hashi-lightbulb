@@ -17,17 +17,20 @@ contract CCIP is Script {
         //
         address headerStorage = vm.envAddress("HEADER_STORAGE");
         address yaho = vm.envAddress("YAHO_ADDRESS");
-        address router1 = vm.envAddress("CCIP_ROUTER_REPORTER");
+        address router = vm.envAddress("CCIP_REPORTER_ROUTER");
 
-        CCIPReporter reporter = new CCIPReporter(headerStorage, yaho, router1);
+        CCIPReporter reporter = new CCIPReporter(headerStorage, yaho, router);
         console.log("CCIPReporter deployed at:", address(reporter));
 
         // read chain‐specific setup from env
-        uint256 reportChainId = vm.envUint("REPORT_CHAIN_ID");
-        uint64 reportChainSelector = uint64(vm.envUint("REPORT_CHAIN_SELECTOR"));
+        uint256 adapterChainId = vm.envUint("CCIP_ADAPTER_CHAIN_ID");
+        uint64 adapterChainSelector = uint64(vm.envUint("CCIP_ADAPTER_CHAIN_SELECTOR"));
 
         // set the selector
-        reporter.setChainSelectorByChainId(reportChainId, reportChainSelector);
+        reporter.setChainSelectorByChainId(adapterChainId, adapterChainSelector);
+
+        // fund the reporter
+        vm.deal(address(reporter), 0.01 ether);
 
         vm.stopBroadcast();
     }

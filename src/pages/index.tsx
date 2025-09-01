@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Address } from "viem";
-import { arbitrumSepolia } from "viem/chains";
+import { arbitrumSepolia, gnosisChiado } from "viem/chains";
 import { Header } from "@/components/Header";
 import { LightbulbControls } from "@/components/LightBulbControls";
 import { HistoryTable, HistoryEntry } from "@/components/HistoryDialog";
@@ -24,6 +24,9 @@ export default function Home() {
   const [walletChainId, setWalletChainId] = useState<number>(
     arbitrumSepolia.id
   ); // Arbitrum Sepolia default
+  const [lightbulbChainId, setLightbulbChainId] = useState<number>(
+    gnosisChiado.id
+  );
 
   useEffect(() => {
     // Ensure the wallet client is initialized when the app loads
@@ -47,7 +50,7 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    const stored = localStorage.getItem(`lightbulbHistory-${walletChainId}`);
+    const stored = localStorage.getItem(`lightbulbHistory`);
     if (stored) {
       try {
         const parsed: HistoryEntry[] = JSON.parse(stored);
@@ -68,8 +71,18 @@ export default function Home() {
             {...{ account, setAccount, walletChainId, setWalletChainId }}
           />
           <div className="flex w-full justify-around">
-            <LightbulbControls {...{ account, setHistory }} />
-            <LightbulbStatusDialog address={account} />
+            <LightbulbControls
+              {...{
+                account,
+                setHistory,
+                lightbulbChainId,
+              }}
+            />
+            <LightbulbStatusDialog
+              address={account}
+              lightbulbChainId={lightbulbChainId}
+              setLightbulbChainId={setLightbulbChainId}
+            />
           </div>
           {history.length > 0 && (
             <HistoryTable {...{ chainId: walletChainId, account, history }} />

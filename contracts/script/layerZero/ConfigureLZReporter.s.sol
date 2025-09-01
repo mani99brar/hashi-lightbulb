@@ -16,10 +16,7 @@ contract DeployLZReporter is Script {
         uint256 pk = vm.envUint("DEPLOYER_KEY");
         address deployer = vm.addr(pk);
 
-        address headerStorage = vm.envAddress("HEADER_STORAGE");
-        address yaho = vm.envAddress("YAHO_ADDRESS");
         address lzEndpoint = vm.envAddress("LZ_ENDPOINT");
-        uint128 defaultFee = uint128(vm.envUint("LZ_DEFAULT_FEE"));
         uint256 chainId = vm.envUint("ADAPTER_CHAIN_ID");
         uint32 eid = uint32(vm.envUint("ADAPTER_EID"));
         address sendLib = vm.envAddress("LZ_SEND_LIB");
@@ -29,7 +26,6 @@ contract DeployLZReporter is Script {
 
         vm.startBroadcast(pk);
         LayerZeroReporter reporter = LayerZeroReporter(payable(reporterAddress));
-        console.log("Deployed LayerZeroReporter at:", address(reporter));
 
         // Allow the adapter to receive messages
         reporter.setPeer(eid, bytes32(uint256(uint160(adapter))));
@@ -45,13 +41,13 @@ contract DeployLZReporter is Script {
         // Set the DVN config as reporter
         address[] memory optionalDVNs = new address[](0);
         address[] memory requiredDVNs = new address[](2);
-        requiredDVNs[1] = address(0xeFd1d76A2DB92bAd8FD56167f847D204f5F4004E);
-        requiredDVNs[0] = address(0x8eebf8b423B73bFCa51a1Db4B7354AA0bFCA9193);
+        requiredDVNs[1] = address(0x7c84fEb58183d3865E4e01d1b6C22bA2d227Dc23);
+        requiredDVNs[0] = address(0x53f488E93b4f1b60E8E83aa374dBe1780A1EE8a8);
 
         UlnConfig memory uln = UlnConfig({
             confirmations: 15, // minimum block confirmations required
             requiredDVNCount: 2, // number of DVNs required
-            optionalDVNCount: type(uint8).max, // optional DVNs count, uint8
+            optionalDVNCount: 0, // optional DVNs count, uint8
             optionalDVNThreshold: 0, // optional DVN threshold
             requiredDVNs: requiredDVNs, // sorted list of required DVN addresses
             optionalDVNs: optionalDVNs // sorted list of optional DVNs
@@ -70,8 +66,6 @@ contract DeployLZReporter is Script {
         params[0] = SetConfigParam(eid, EXECUTOR_CONFIG_TYPE, encodedExec);
         params[1] = SetConfigParam(eid, ULN_CONFIG_TYPE, encodedUln);
 
-        // ILayerZeroEndpointV2(lzEndpoint).setReceiveLibrary(address(adapter), eid, receiveLib,1);
-        // console.log("Receive library set successfully.");
 
         MessageLibManager(lzEndpoint).setConfig(address(reporter), sendLib, params);
         console.log("Config set successfully.");

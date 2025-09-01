@@ -56,9 +56,6 @@ contract DeployLZAdapter is Script {
         SetConfigParam[] memory params = new SetConfigParam[](1);
         params[0] = SetConfigParam(eid, RECEIVE_CONFIG_TYPE, encodedUln);
 
-        // ILayerZeroEndpointV2(lzEndpoint).setReceiveLibrary(address(adapter), eid, receiveLib,1);
-        // console.log("Receive library set successfully.");
-
         ILayerZeroEndpointV2(lzEndpoint).setConfig(address(adapter), receiveLib, params);
         console.log("Config set successfully.");
 

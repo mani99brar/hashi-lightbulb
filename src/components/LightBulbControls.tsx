@@ -2,7 +2,11 @@
 import React, { useEffect, useState } from "react";
 import { Address } from "viem";
 import { arbitrumSepolia } from "viem/chains";
-import { HashiAddress, BridgeAddresses, YAHO_ADDRESS } from "@/utils/consts";
+import {
+  HashiAddress,
+  BRIDGES_PER_CHAIN,
+  YAHO_ADDRESS_ARBITRUM_SEPOLIA,
+} from "@/utils/consts";
 import { useSwitch } from "@/hooks/useSwitch";
 import { HistoryEntry } from "./HistoryDialog";
 import { ensureChain } from "@/utils/viemClient";
@@ -15,12 +19,14 @@ type Bridge = "LayerZero" | "CCIP" | "Vea";
 export function LightbulbControls({
   account,
   setHistory,
+  lightbulbChainId,
 }: {
   account: Address | null;
   setHistory: React.Dispatch<React.SetStateAction<HistoryEntry[]>>;
+  lightbulbChainId: number;
 }) {
   const [threshold, setThreshold] = useState<number | "">("");
-  const { turnOnLightBulb, txHash, status } = useSwitch();
+  const { turnOnLightBulb, txHash, status } = useSwitch(lightbulbChainId);
   const [isLoading, setIsLoading] = useState(false);
   const [bridges, setBridges] = useState<HashiAddress[]>([]);
   const [selectedBridges, setSelectedBridges] = useState<
@@ -62,9 +68,8 @@ export function LightbulbControls({
       (bridge) => selectedBridges[bridge]
     );
     const selectedHashiAddresses: HashiAddress[] = chosen.map(
-      (bridge) => BridgeAddresses[bridge]
+      (bridge) => BRIDGES_PER_CHAIN[lightbulbChainId][bridge]
     );
-    console.log({ threshold, selectedHashiAddresses, account });
     setBridges(selectedHashiAddresses);
     await turnOnLightBulb(threshold, selectedHashiAddresses, account);
   };
@@ -89,7 +94,9 @@ export function LightbulbControls({
           timeout: 60_000,
         });
         const yahoLogs = receipt.logs.filter(
-          (log) => log.address.toLowerCase() === YAHO_ADDRESS.toLowerCase()
+          (log) =>
+            log.address.toLowerCase() ===
+            YAHO_ADDRESS_ARBITRUM_SEPOLIA.toLowerCase()
         );
         let messageNonce: number | undefined = 0;
         try {
@@ -105,6 +112,7 @@ export function LightbulbControls({
           console.error("Failed to decode Yaho log:", err);
         }
         const bridgeEntry: HistoryEntry = {
+          chainId: lightbulbChainId,
           nonce: messageNonce.toString(),
           data: encodeAbiParameters([{ type: "address" }], [account!]),
           switchTx: txHash,
@@ -124,7 +132,6 @@ export function LightbulbControls({
           },
           executed: false,
         };
-        console.log("Transaction sent:", txHash);
         setHistory((prev) => {
           const updated = [...prev, bridgeEntry];
           try {
