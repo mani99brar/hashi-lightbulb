@@ -20,10 +20,6 @@ contract DeployLZReporter is Script {
         address yaho = vm.envAddress("YAHO_ADDRESS");
         address lzEndpoint = vm.envAddress("LZ_ENDPOINT");
         uint128 defaultFee = uint128(vm.envUint("LZ_DEFAULT_FEE"));
-        uint256 chainId = vm.envUint("ADAPTER_CHAIN_ID");
-        uint32 eid = uint32(vm.envUint("ADAPTER_EID"));
-        address sendLib = vm.envAddress("LZ_SEND_LIB");
-        address executor = vm.envAddress("LZ_EXECUTOR");
 
         vm.startBroadcast(pk);
         LayerZeroReporter reporter = new LayerZeroReporter(
@@ -35,6 +31,7 @@ contract DeployLZReporter is Script {
             defaultFee
         );
         console.log("Deployed LayerZeroReporter at:", address(reporter));
+
         vm.stopBroadcast();
     }
 }

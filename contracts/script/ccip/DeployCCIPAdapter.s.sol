@@ -15,13 +15,13 @@ contract CCIP is Script {
         //
         // Deploy & configure CCIPAdapter
         //
-        address router = vm.envAddress("CCIP_ROUTER_ADAPTER");
+        address router = vm.envAddress("CCIP_ADAPTER_ROUTER");
         CCIPAdapter adapter = new CCIPAdapter(router);
         console.log(" CCIPAdapter deployed at:", address(adapter));
 
         // read chain‐specific setup from env
-        uint256 reportChainId = vm.envUint("REPORT_CHAIN_ID");
-        uint64 reportChainSelector = uint64(vm.envUint("REPORT_CHAIN_SELECTOR"));
+        uint256 reportChainId = vm.envUint("CCIP_REPORTER_CHAIN_ID");
+        uint64 reportChainSelector = uint64(vm.envUint("CCIP_REPORTER_CHAIN_SELECTOR"));
         address reporter = vm.envAddress("CCIP_REPORTER");
 
         // use the same chainId + selector + reporter address to wire up the adapter
