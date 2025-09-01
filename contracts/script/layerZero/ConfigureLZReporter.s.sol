@@ -28,15 +28,15 @@ contract DeployLZReporter is Script {
         LayerZeroReporter reporter = LayerZeroReporter(payable(reporterAddress));
 
         // Allow the adapter to receive messages
-        // reporter.setPeer(eid, bytes32(uint256(uint160(adapter))));
-        // console.log("Peer set for adapter");
+        reporter.setPeer(eid, bytes32(uint256(uint160(adapter))));
+        console.log("Peer set for adapter");
 
-        // reporter.setEndpointIdByChainId(chainId, eid);
-        // console.log("Endpoint set for adapter chainId");
+        reporter.setEndpointIdByChainId(chainId, eid);
+        console.log("Endpoint set for adapter chainId");
 
-        // (bool success, ) = payable(address(reporter)).call{value: 0.01 ether}("");
-        // require(success, "ETH transfer to reporter failed");
-        // console.log("Funded reporter with 0.01 ETH");
+        (bool success, ) = payable(address(reporter)).call{value: 0.01 ether}("");
+        require(success, "ETH transfer to reporter failed");
+        console.log("Funded reporter with 0.01 ETH");
 
         // Set the DVN config as reporter
         address[] memory optionalDVNs = new address[](0);

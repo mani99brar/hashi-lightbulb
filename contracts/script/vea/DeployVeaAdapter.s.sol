@@ -15,16 +15,18 @@ contract DeployVea is Script {
         //
         // Deploy the adapter first
         //
-        // address veaOutbox = vm.envAddress("VEA_OUTBOX");
-        // uint256 sourceChain = vm.envUint("VEA_SOURCE_CHAIN_ID");
-        // VeaAdapter adapter = new VeaAdapter(veaOutbox, sourceChain);
-        // console.log("VeaAdapter deployed at:", address(adapter));
-        address veaAdapter = vm.envAddress("VEA_ADAPTER");
-        VeaAdapter adapter = VeaAdapter(veaAdapter);
+        address veaOutbox = vm.envAddress("VEA_OUTBOX");
+        uint256 sourceChain = vm.envUint("VEA_SOURCE_CHAIN_ID");
+        VeaAdapter adapter = new VeaAdapter(veaOutbox, sourceChain);
+        console.log("VeaAdapter deployed at:", address(adapter));
 
-        address reporter = vm.envAddress("VEA_REPORTER");
-        adapter.setReporter(reporter);
-        console.log(" adapter.setReporter(", reporter, ")");
+        // Run after deployment
+        // address veaAdapter = vm.envAddress("VEA_ADAPTER");
+        // VeaAdapter adapter = VeaAdapter(veaAdapter);
+
+        // address reporter = vm.envAddress("VEA_REPORTER");
+        // adapter.setReporter(reporter);
+        // console.log(" adapter.setReporter(", reporter, ")");
 
         vm.stopBroadcast();
     }
