@@ -7,7 +7,7 @@ import { SwitchAbi } from "@/utils/abis/switchAbi";
 import {
   HashiAddress,
   SWITCH_ADDRESS,
-  LIGHTBULB_ADDRESS,
+  LIGHTBULB_PER_CHAIN,
 } from "@/utils/consts";
 
 export type TxnStatus = "idle" | "pending" | "success" | "error";
@@ -32,7 +32,7 @@ interface UseSwitchReturn {
  *
  * @param contractAddress - deployed Switch contract address
  */
-export function useSwitch(): UseSwitchReturn {
+export function useSwitch(lightbulbChainId: number): UseSwitchReturn {
   const [status, setStatus] = useState<TxnStatus>("idle");
   const [txHash, setTxHash] = useState<string>();
   const [error, setError] = useState<string>();
@@ -53,7 +53,13 @@ export function useSwitch(): UseSwitchReturn {
       const data = encodeFunctionData({
         abi: SwitchAbi,
         functionName: "turnOnLightBulb",
-        args: [LIGHTBULB_ADDRESS, threshold, reporters, adapters],
+        args: [
+          lightbulbChainId,
+          LIGHTBULB_PER_CHAIN[lightbulbChainId],
+          threshold,
+          reporters,
+          adapters,
+        ],
       });
       const { publicClient: arbSepoliaPublicClient } = await ensureChain(
         arbitrumSepolia.id
@@ -66,18 +72,17 @@ export function useSwitch(): UseSwitchReturn {
         data,
         value: BigInt(0),
       });
-      console.log(
-        "Txn args:",
-        LIGHTBULB_ADDRESS,
-        threshold,
-        reporters,
-        adapters
-      );
       const hash = await client.writeContract({
         address: SWITCH_ADDRESS,
         abi: SwitchAbi,
         functionName: "turnOnLightBulb",
-        args: [LIGHTBULB_ADDRESS, threshold, reporters, adapters],
+        args: [
+          lightbulbChainId,
+          LIGHTBULB_PER_CHAIN[lightbulbChainId],
+          threshold,
+          reporters,
+          adapters,
+        ],
         value: BigInt(0),
         chain: arbitrumSepolia,
         account,

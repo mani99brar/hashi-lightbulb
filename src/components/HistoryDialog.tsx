@@ -1,17 +1,16 @@
 import React from "react";
 import { Hex, Address } from "viem";
-import { getWalletClient, ensureChain } from "@/utils/viemClient";
+import { getWalletClient, ensureChain, CHAIN_BY_ID } from "@/utils/viemClient";
 import {
   HashiAddress,
-  LIGHTBULB_ADDRESS,
+  LIGHTBULB_PER_CHAIN,
   SWITCH_ADDRESS,
-  YARU_ADDRESS,
+  YARU_PER_CHAIN,
 } from "@/utils/consts";
 import { YaruAbi } from "@/utils/abis/yaruAbi";
-import { gnosisChiado } from "viem/chains";
-import { BridgeAddresses, Bridges } from "@/utils/consts";
 
 export interface HistoryEntry {
+  chainId: number;
   nonce: string;
   data: Hex;
   threshold: number;
@@ -44,6 +43,7 @@ interface HistoryTableProps {
 }
 
 export function HistoryTable({ chainId, account, history }: HistoryTableProps) {
+  const [isDeleted, setIsDeleted] = React.useState(false);
   const onExecute = async (entry: HistoryEntry) => {
     const client = getWalletClient();
     if (!client) {
@@ -57,28 +57,35 @@ export function HistoryTable({ chainId, account, history }: HistoryTableProps) {
       const message = {
         nonce: entry.nonce,
         data: entry.data,
-        targetChainId: 10200,
+        targetChainId: chainId,
         threshold: entry.threshold,
         sender: SWITCH_ADDRESS,
-        receiver: LIGHTBULB_ADDRESS,
+        receiver: LIGHTBULB_PER_CHAIN[chainId],
         reporters,
         adapters,
       };
 
-      // Call executeMessages on Yaru contract
-      const txHash = await client.writeContract({
-        address: YARU_ADDRESS,
+      const { publicClient } = await ensureChain(chainId);
+      const estimatedGas = await publicClient.estimateContractGas({
+        address: YARU_PER_CHAIN[chainId],
         abi: YaruAbi,
         functionName: "executeMessages",
         args: [[message]],
-        chain: gnosisChiado,
-        account,
       });
-      const { publicClient } = await ensureChain(chainId);
+
+      // Call executeMessages on Yaru contract
+      const txHash = await client.writeContract({
+        address: YARU_PER_CHAIN[chainId],
+        abi: YaruAbi,
+        functionName: "executeMessages",
+        args: [[message]],
+        chain: CHAIN_BY_ID[chainId],
+        account,
+        gas: estimatedGas,
+      });
       const receipt = await publicClient.waitForTransactionReceipt({
         hash: txHash,
       });
-      console.log("Receipt received:", receipt);
 
       if (receipt.status === "success") {
         alert(`Message executed successfully! Tx: ${txHash}`);
@@ -90,18 +97,37 @@ export function HistoryTable({ chainId, account, history }: HistoryTableProps) {
       alert(`Execution failed: ${err.message || err}`);
     }
   };
+
+  const onDelete = () => {
+    localStorage.setItem("lightbulbHistory", JSON.stringify([]));
+    setIsDeleted(true);
+  };
+
+  if (isDeleted) {
+    return;
+  }
   return (
     <div className="mx-auto bg-black border-2 border-white w-full rounded-lg shadow-md p-6">
-      <h2 className="text-xl font-semibold mb-4">Transaction History</h2>
+      <div className="flex justify-between">
+        <h2 className="text-xl font-semibold mb-4">Transaction History</h2>
+        <button
+          className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+          onClick={() => {
+            onDelete();
+          }}
+        >
+          Delete All
+        </button>
+      </div>
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
             <tr>
-              <th className="pb-2 border-b">Switch TXN</th>
-              <th className="pb-2 border-b">LayerZero</th>
-              <th className="pb-2 border-b">CCIP</th>
-              <th className="pb-2 border-b">Vea</th>
-              <th className="pb-2 border-b">Action</th>
+              <th className="pb-2 border-b w-1/6">Switch TXN</th>
+              <th className="pb-2 border-b w-1/6">LayerZero</th>
+              <th className="pb-2 border-b w-1/6">CCIP</th>
+              <th className="pb-2 border-b w-1/6">Vea</th>
+              <th className="pb-2 border-b w-2/6">Action</th>
             </tr>
           </thead>
           <tbody>
@@ -155,10 +181,14 @@ export function HistoryTable({ chainId, account, history }: HistoryTableProps) {
                 <td className="py-2">
                   {!entry.executed && (
                     <button
+                      disabled={entry.chainId == chainId && !chainId}
                       onClick={() => onExecute(entry)}
                       className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
                     >
-                      Execute
+                      {entry.chainId == chainId
+                        ? "Execute"
+                        : "Switch wallet to " +
+                          CHAIN_BY_ID[entry.chainId]?.name}
                     </button>
                   )}
                 </td>
