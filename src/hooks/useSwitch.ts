@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Address } from "viem";
 import { arbitrumSepolia } from "viem/chains";
 import { encodeFunctionData } from "viem";
-import { getWalletClient, ensureChain } from "@/utils/viemClient";
+import { ensureChain } from "@/utils/viem";
+import { useSendTransaction } from "wagmi";
 import { SwitchAbi } from "@/utils/abis/switchAbi";
 import {
   HashiAddress,
@@ -18,7 +19,7 @@ interface UseSwitchReturn {
     threshold: number,
     HashiAddresses: HashiAddress[],
     account: Address
-  ) => Promise<string>;
+  ) => Promise<void>;
   /** current transaction hash (if any) */
   txHash?: string;
   /** error message (if any) */
@@ -36,14 +37,19 @@ export function useSwitch(lightbulbChainId: number): UseSwitchReturn {
   const [status, setStatus] = useState<TxnStatus>("idle");
   const [txHash, setTxHash] = useState<string>();
   const [error, setError] = useState<string>();
+  const { data: hash, sendTransaction } = useSendTransaction();
+
+  useEffect(() => {
+    if (hash) {
+      setTxHash(hash);
+    }
+  }, [hash]);
 
   const turnOnLightBulb = async (
     threshold: number,
     bridges: HashiAddress[],
     account: Address
-  ): Promise<string> => {
-    const client = getWalletClient();
-    if (!client) throw new Error("Wallet not connected");
+  ): Promise<void> => {
     const reporters: Address[] = bridges.map((b) => b.reporter);
     const adapters: Address[] = bridges.map((b) => b.adapter);
     try {
@@ -72,25 +78,14 @@ export function useSwitch(lightbulbChainId: number): UseSwitchReturn {
         data,
         value: BigInt(0),
       });
-      const hash = await client.writeContract({
-        address: SWITCH_ADDRESS,
-        abi: SwitchAbi,
-        functionName: "turnOnLightBulb",
-        args: [
-          lightbulbChainId,
-          LIGHTBULB_PER_CHAIN[lightbulbChainId],
-          threshold,
-          reporters,
-          adapters,
-        ],
+
+      sendTransaction({
+        to: SWITCH_ADDRESS,
+        data,
         value: BigInt(0),
-        chain: arbitrumSepolia,
-        account,
         gas: estimatedGas,
       });
-      setTxHash(hash);
       setStatus("success");
-      return hash;
     } catch (e: any) {
       setError(e?.message ?? String(e));
       setStatus("error");

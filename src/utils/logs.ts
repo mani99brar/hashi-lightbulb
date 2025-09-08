@@ -1,6 +1,6 @@
 import { decodeEventLog, Address } from "viem";
 import { arbitrumSepolia } from "viem/chains";
-import { ensureChain } from "@/utils/viemClient";
+import { ensureChain } from "@/utils/viem";
 import { SwitchAbi } from "@/utils/abis/switchAbi";
 import { SWITCH_ADDRESS } from "@/utils/consts";
 

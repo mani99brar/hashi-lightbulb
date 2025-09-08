@@ -1,6 +1,6 @@
 import React from "react";
-import { Hex, Address } from "viem";
-import { getWalletClient, ensureChain, CHAIN_BY_ID } from "@/utils/viemClient";
+import { Hex, Address, encodeFunctionData } from "viem";
+import { ensureChain, CHAIN_BY_ID } from "@/utils/viem";
 import {
   HashiAddress,
   LIGHTBULB_PER_CHAIN,
@@ -8,6 +8,7 @@ import {
   YARU_PER_CHAIN,
 } from "@/utils/consts";
 import { YaruAbi } from "@/utils/abis/yaruAbi";
+import { useSendTransaction } from "wagmi";
 
 export interface HistoryEntry {
   chainId: number;
@@ -38,18 +39,13 @@ export interface HistoryEntry {
 
 interface HistoryTableProps {
   chainId: number;
-  account: Address | null;
   history: HistoryEntry[];
 }
 
-export function HistoryTable({ chainId, account, history }: HistoryTableProps) {
+export function HistoryTable({ chainId, history }: HistoryTableProps) {
   const [isDeleted, setIsDeleted] = React.useState(false);
+  const { sendTransaction } = useSendTransaction();
   const onExecute = async (entry: HistoryEntry) => {
-    const client = getWalletClient();
-    if (!client) {
-      alert("Connect your wallet to execute messages");
-      return;
-    }
     const reporters: Address[] = entry.bridges.map((b) => b.reporter);
     const adapters: Address[] = entry.bridges.map((b) => b.adapter);
     try {
@@ -72,26 +68,17 @@ export function HistoryTable({ chainId, account, history }: HistoryTableProps) {
         functionName: "executeMessages",
         args: [[message]],
       });
-
-      // Call executeMessages on Yaru contract
-      const txHash = await client.writeContract({
-        address: YARU_PER_CHAIN[chainId],
+      const data = encodeFunctionData({
         abi: YaruAbi,
         functionName: "executeMessages",
         args: [[message]],
-        chain: CHAIN_BY_ID[chainId],
-        account,
+      });
+      sendTransaction({
+        to: YARU_PER_CHAIN[chainId],
+        data,
+        chainId,
         gas: estimatedGas,
       });
-      const receipt = await publicClient.waitForTransactionReceipt({
-        hash: txHash,
-      });
-
-      if (receipt.status === "success") {
-        alert(`Message executed successfully! Tx: ${txHash}`);
-      } else {
-        throw new Error("Transaction failed on-chain");
-      }
     } catch (err: any) {
       console.error("executeMessages failed", err);
       alert(`Execution failed: ${err.message || err}`);

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { getWalletClient } from "@/utils/viemClient";
-import { fetchLightBulbToggledEvents } from "@/utils/logs";
+import { useAppKitAccount } from "@reown/appkit/react";
 import { useLightBulb } from "@/hooks/useLigthBulb";
 import { Address, Chain } from "viem";
 import { gnosisChiado, sepolia } from "viem/chains";
@@ -11,14 +10,13 @@ const LIGHTBULB_CHAINS: Chain[] = [gnosisChiado, sepolia];
  * Always-visible dialog to check and display lightbulb on/off status.
  */
 export function LightbulbStatusDialog({
-  address,
   lightbulbChainId,
   setLightbulbChainId,
 }: {
-  address: Address | null;
   lightbulbChainId: number;
   setLightbulbChainId: React.Dispatch<React.SetStateAction<number>>;
 }) {
+  const { address } = useAppKitAccount();
   // optional override input
   const [inputAddress, setInputAddress] = useState<string>("");
   // current lightbulb status

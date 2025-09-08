@@ -1,6 +1,6 @@
 // hooks/useLightBulb.ts
 import { useState, useEffect, useCallback } from "react";
-import { getPublic } from "@/utils/viemClient";
+import { getPublic } from "@/utils/viem";
 import type { Address } from "viem";
 import { LightbulbAbi } from "@/utils/abis/lightbulbAbi";
 import { LIGHTBULB_PER_CHAIN } from "@/utils/consts";

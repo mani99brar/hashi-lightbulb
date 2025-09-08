@@ -1,7 +1,8 @@
 // src/components/LightbulbControls.tsx
 import React, { useEffect, useState } from "react";
-import { Address } from "viem";
 import { arbitrumSepolia } from "viem/chains";
+import { type Address } from "viem";
+import { useAppKitAccount } from "@reown/appkit/react";
 import {
   HashiAddress,
   BRIDGES_PER_CHAIN,
@@ -9,7 +10,7 @@ import {
 } from "@/utils/consts";
 import { useSwitch } from "@/hooks/useSwitch";
 import { HistoryEntry } from "./HistoryDialog";
-import { ensureChain } from "@/utils/viemClient";
+import { ensureChain } from "@/utils/viem";
 import { YahoAbi } from "@/utils/abis/yahoAbi";
 import { encodeAbiParameters, decodeEventLog } from "viem";
 import type { MessageDispatchedLog } from "@/utils/types";
@@ -17,11 +18,9 @@ import type { MessageDispatchedLog } from "@/utils/types";
 type Bridge = "LayerZero" | "CCIP" | "Vea";
 
 export function LightbulbControls({
-  account,
   setHistory,
   lightbulbChainId,
 }: {
-  account: Address | null;
   setHistory: React.Dispatch<React.SetStateAction<HistoryEntry[]>>;
   lightbulbChainId: number;
 }) {
@@ -36,7 +35,7 @@ export function LightbulbControls({
     CCIP: false,
     Vea: false,
   });
-
+  const { address: account } = useAppKitAccount();
   const handleThresholdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     if (val === "") {
@@ -71,7 +70,11 @@ export function LightbulbControls({
       (bridge) => BRIDGES_PER_CHAIN[lightbulbChainId][bridge]
     );
     setBridges(selectedHashiAddresses);
-    await turnOnLightBulb(threshold, selectedHashiAddresses, account);
+    await turnOnLightBulb(
+      threshold,
+      selectedHashiAddresses,
+      account as Address
+    );
   };
 
   useEffect(() => {
@@ -114,7 +117,10 @@ export function LightbulbControls({
         const bridgeEntry: HistoryEntry = {
           chainId: lightbulbChainId,
           nonce: messageNonce.toString(),
-          data: encodeAbiParameters([{ type: "address" }], [account!]),
+          data: encodeAbiParameters(
+            [{ type: "address" }],
+            [account as Address]
+          ),
           switchTx: txHash,
           threshold: Number(threshold),
           bridges,
