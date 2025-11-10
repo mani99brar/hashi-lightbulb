@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Address } from "viem";
-import { arbitrumSepolia } from "viem/chains";
 import { encodeFunctionData } from "viem";
-import { ensureChain } from "@/utils/viem";
 import { useSendTransaction } from "wagmi";
 import { SwitchAbi } from "@/utils/abis/switchAbi";
 import {
@@ -67,23 +65,10 @@ export function useSwitch(lightbulbChainId: number): UseSwitchReturn {
           adapters,
         ],
       });
-      const { publicClient: arbSepoliaPublicClient } = await ensureChain(
-        arbitrumSepolia.id
-      );
-
-      // Estimate gas via public client
-      const estimatedGas = await arbSepoliaPublicClient.estimateGas({
-        account,
-        to: SWITCH_ADDRESS,
-        data,
-        value: BigInt(0),
-      });
-
       sendTransaction({
         to: SWITCH_ADDRESS,
         data,
         value: BigInt(0),
-        gas: estimatedGas,
       });
       setStatus("success");
     } catch (e: any) {

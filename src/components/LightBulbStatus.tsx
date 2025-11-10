@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { useAppKitAccount } from "@reown/appkit/react";
 import { useLightBulb } from "@/hooks/useLigthBulb";
 import { Address, Chain } from "viem";
 import { gnosisChiado, sepolia } from "viem/chains";
@@ -10,13 +9,14 @@ const LIGHTBULB_CHAINS: Chain[] = [gnosisChiado, sepolia];
  * Always-visible dialog to check and display lightbulb on/off status.
  */
 export function LightbulbStatusDialog({
+  address,
   lightbulbChainId,
   setLightbulbChainId,
 }: {
+  address: string | undefined;
   lightbulbChainId: number;
   setLightbulbChainId: React.Dispatch<React.SetStateAction<number>>;
 }) {
-  const { address } = useAppKitAccount();
   // optional override input
   const [inputAddress, setInputAddress] = useState<string>("");
   // current lightbulb status
@@ -34,7 +34,7 @@ export function LightbulbStatusDialog({
    * Trigger a status check for the given address (or connected address if none)
    */
   const handleCheckStatus = async () => {
-    const addrToCheck = inputAddress.trim() || address;
+    const addrToCheck = address;
     if (!addrToCheck) {
       alert("Please connect your wallet or enter an address");
       return;

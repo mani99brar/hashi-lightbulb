@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAppKitNetwork } from "@reown/appkit/react";
+import { useAppKitAccount } from "@reown/appkit/react";
 import { arbitrumSepolia, gnosisChiado } from "viem/chains";
 import { Header } from "@/components/Header";
 import { LightbulbControls } from "@/components/LightBulbControls";
@@ -55,6 +56,7 @@ export default function Home() {
     gnosisChiado.id
   );
   const { chainId: connectedChainId } = useAppKitNetwork();
+  const { address } = useAppKitAccount();
   console.log("Connected chainId", connectedChainId);
 
   useEffect(() => {
@@ -85,8 +87,7 @@ export default function Home() {
                 }}
               />
               <LightbulbStatusDialog
-                lightbulbChainId={lightbulbChainId}
-                setLightbulbChainId={setLightbulbChainId}
+                {...{ address, lightbulbChainId, setLightbulbChainId }}
               />
             </div>
             {history.length > 0 && (

@@ -16,7 +16,16 @@ export function getPublicClient(chainId: number) {
   const existing = _publicClients.get(chainId);
   if (existing) return existing;
   const chain = CHAIN_BY_ID[chainId] ?? DEFAULT_CHAIN;
-  const client = createPublicClient({ chain, transport: http() });
+  let client: ReturnType<typeof createPublicClient>;
+  if (chain.id === arbitrumSepolia.id) {
+    client = createPublicClient({
+      chain,
+      transport: http(process.env.NEXT_PUBLIC_ARBITRUM_SEPOLIA_RPC),
+    });
+  } else {
+    client = createPublicClient({ chain, transport: http() });
+  }
+
   _publicClients.set(chain.id, client);
   return client;
 }

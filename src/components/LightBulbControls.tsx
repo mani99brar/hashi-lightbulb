@@ -94,7 +94,6 @@ export function LightbulbControls({
         const receipt = await arbSepoliaPublicClient.waitForTransactionReceipt({
           hash: txHash as `0x${string}`,
           pollingInterval: 1_000,
-          timeout: 60_000,
         });
         const yahoLogs = receipt.logs.filter(
           (log) =>
