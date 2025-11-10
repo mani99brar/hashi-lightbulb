@@ -30,7 +30,8 @@ contract CCIP is Script {
         reporter.setChainSelectorByChainId(adapterChainId, adapterChainSelector);
 
         // fund the reporter
-        vm.deal(address(reporter), 0.01 ether);
+        (bool sent, ) = address(reporter).call{value: 0.01 ether}("");
+        require(sent, "Failed to fund CCIPReporter");
 
         vm.stopBroadcast();
     }

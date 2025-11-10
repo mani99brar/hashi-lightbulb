@@ -6,7 +6,7 @@ import "../../src/vea/VeaAdapter.sol";
 import "../../src/vea/VeaReporter.sol";
 import {IVeaInbox} from "../../src/vea/interfaces/IVeaInbox.sol";
 
-contract DeployVea is Script {
+contract DeployVeaAdapter is Script {
     function run() external {
         // start broadcasting as your deployer
         uint256 pk = vm.envUint("DEPLOYER_KEY");
@@ -20,14 +20,21 @@ contract DeployVea is Script {
         VeaAdapter adapter = new VeaAdapter(veaOutbox, sourceChain);
         console.log("VeaAdapter deployed at:", address(adapter));
 
-        // Run after deployment
-        // address veaAdapter = vm.envAddress("VEA_ADAPTER");
-        // VeaAdapter adapter = VeaAdapter(veaAdapter);
-
-        // address reporter = vm.envAddress("VEA_REPORTER");
-        // adapter.setReporter(reporter);
-        // console.log(" adapter.setReporter(", reporter, ")");
-
         vm.stopBroadcast();
+    }
+}
+
+// Run after deployment
+contract SetupVeaReporter is Script {
+    function run() external {
+        // start broadcasting as your deployer
+        uint256 pk = vm.envUint("DEPLOYER_KEY");
+        address veaAdapter = vm.envAddress("VEA_ADAPTER");
+        address reporter = vm.envAddress("VEA_REPORTER");
+
+        vm.startBroadcast(pk);
+        VeaAdapter adapter = VeaAdapter(veaAdapter);
+        adapter.setReporter(reporter);
+        console.log(" adapter.setReporter(", reporter, ")");
     }
 }
