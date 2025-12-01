@@ -48,15 +48,15 @@ export function useLightBulb(
           args: [owner],
         });
         setIsOn(result as boolean);
-      } catch (e: any) {
+      } catch (e) {
         console.error("Failed to fetch lightbulb state", e);
-        setError(e.message || String(e));
+        setError(String(e));
         setIsOn(null);
       } finally {
         setLoading(false);
       }
     },
-    [owner]
+    [owner, chainId]
   );
 
   // auto‐fetch on owner change

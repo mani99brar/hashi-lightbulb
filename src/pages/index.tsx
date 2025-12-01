@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAppKitNetwork } from "@reown/appkit/react";
 import { useAppKitAccount } from "@reown/appkit/react";
-import { arbitrumSepolia, gnosisChiado } from "viem/chains";
+import { gnosisChiado } from "viem/chains";
 import { Header } from "@/components/Header";
 import { LightbulbControls } from "@/components/LightBulbControls";
 import { HistoryTable, HistoryEntry } from "@/components/HistoryDialog";

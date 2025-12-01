@@ -20,7 +20,7 @@ export function LightbulbStatusDialog({
   // optional override input
   const [inputAddress, setInputAddress] = useState<string>("");
   // current lightbulb status
-  const { isOn, loading, error, refetch } = useLightBulb(
+  const { isOn, loading, refetch } = useLightBulb(
     lightbulbChainId,
     address as Address
   );
@@ -28,7 +28,7 @@ export function LightbulbStatusDialog({
   // fetch connected address on mount
   useEffect(() => {
     refetch(lightbulbChainId);
-  }, [lightbulbChainId]);
+  }, [lightbulbChainId, refetch]);
 
   /**
    * Trigger a status check for the given address (or connected address if none)

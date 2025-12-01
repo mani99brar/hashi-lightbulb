@@ -1,5 +1,5 @@
 // src/components/LightbulbControls.tsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { arbitrumSepolia } from "viem/chains";
 import { type Address } from "viem";
 import { useAppKitAccount } from "@reown/appkit/react";
@@ -85,9 +85,29 @@ export function LightbulbControls({
     }
   }, [status]);
 
+  const createHistoryEntry = useCallback(
+    (messageNonce: number, txHashValue: string) => {
+      return {
+        chainId: lightbulbChainId,
+        nonce: messageNonce.toString(),
+        data: encodeAbiParameters([{ type: "address" }], [account as Address]),
+        switchTx: txHashValue,
+        threshold: Number(threshold),
+        bridges,
+        layerZero: { txHash: "", isUsed: selectedBridges.LayerZero },
+        CCIP: { txHash: "", isUsed: selectedBridges.CCIP },
+        vea: { txHash: "", isUsed: selectedBridges.Vea },
+        executed: false,
+      } as HistoryEntry;
+    },
+    [lightbulbChainId, account, threshold, bridges, selectedBridges]
+  );
+
   useEffect(() => {
-    if (txHash) {
-      (async () => {
+    if (!txHash) return;
+
+    (async () => {
+      try {
         const { publicClient: arbSepoliaPublicClient } = await ensureChain(
           arbitrumSepolia.id
         );
@@ -95,48 +115,31 @@ export function LightbulbControls({
           hash: txHash as `0x${string}`,
           pollingInterval: 1_000,
         });
+
         const yahoLogs = receipt.logs.filter(
           (log) =>
             log.address.toLowerCase() ===
             YAHO_ADDRESS_ARBITRUM_SEPOLIA.toLowerCase()
         );
-        let messageNonce: number | undefined = 0;
-        try {
-          const decoded = decodeEventLog({
-            abi: YahoAbi,
-            data: yahoLogs[0].data,
-            topics: yahoLogs[0].topics,
-          }) as unknown as MessageDispatchedLog;
-          if (decoded.eventName === "MessageDispatched") {
-            messageNonce = Number(decoded.args.message.nonce);
+
+        let messageNonce = 0;
+        if (yahoLogs[0]) {
+          try {
+            const decoded = decodeEventLog({
+              abi: YahoAbi,
+              data: yahoLogs[0].data,
+              topics: yahoLogs[0].topics,
+            }) as unknown as MessageDispatchedLog;
+            if (decoded.eventName === "MessageDispatched") {
+              messageNonce = Number(decoded.args.message.nonce);
+            }
+          } catch (err) {
+            console.error("Failed to decode Yaho log:", err);
           }
-        } catch (err) {
-          console.error("Failed to decode Yaho log:", err);
         }
-        const bridgeEntry: HistoryEntry = {
-          chainId: lightbulbChainId,
-          nonce: messageNonce.toString(),
-          data: encodeAbiParameters(
-            [{ type: "address" }],
-            [account as Address]
-          ),
-          switchTx: txHash,
-          threshold: Number(threshold),
-          bridges,
-          layerZero: {
-            txHash: "",
-            isUsed: selectedBridges.LayerZero,
-          },
-          CCIP: {
-            txHash: "",
-            isUsed: selectedBridges.CCIP,
-          },
-          vea: {
-            txHash: "",
-            isUsed: selectedBridges.Vea,
-          },
-          executed: false,
-        };
+
+        const bridgeEntry = createHistoryEntry(messageNonce, txHash);
+
         setHistory((prev) => {
           const updated = [...prev, bridgeEntry];
           try {
@@ -146,9 +149,11 @@ export function LightbulbControls({
           }
           return updated;
         });
-      })();
-    }
-  }, [txHash]);
+      } catch (error) {
+        console.error("Transaction confirmation failed:", error);
+      }
+    })();
+  }, [txHash, createHistoryEntry, setHistory]);
 
   return (
     <div className="w-1/2 mr-10 mx-auto bg-black border-2 border-white p-6 rounded-lg shadow-md">

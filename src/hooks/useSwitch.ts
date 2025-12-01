@@ -45,8 +45,7 @@ export function useSwitch(lightbulbChainId: number): UseSwitchReturn {
 
   const turnOnLightBulb = async (
     threshold: number,
-    bridges: HashiAddress[],
-    account: Address
+    bridges: HashiAddress[]
   ): Promise<void> => {
     const reporters: Address[] = bridges.map((b) => b.reporter);
     const adapters: Address[] = bridges.map((b) => b.adapter);
@@ -71,8 +70,8 @@ export function useSwitch(lightbulbChainId: number): UseSwitchReturn {
         value: BigInt(0),
       });
       setStatus("success");
-    } catch (e: any) {
-      setError(e?.message ?? String(e));
+    } catch (e) {
+      setError(String(e));
       setStatus("error");
       throw e;
     }

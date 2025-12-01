@@ -79,9 +79,9 @@ export function HistoryTable({ chainId, history }: HistoryTableProps) {
         chainId,
         gas: estimatedGas,
       });
-    } catch (err: any) {
+    } catch (err) {
       console.error("executeMessages failed", err);
-      alert(`Execution failed: ${err.message || err}`);
+      alert(`Execution failed: ${err}`);
     }
   };
 

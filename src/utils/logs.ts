@@ -12,6 +12,11 @@ export interface LightBulbToggledEvent {
   lightBulbOwner: Address;
 }
 
+type LightbulbLog = {
+  messageId: bigint;
+  lightBulbOwner: Address;
+};
+
 /**
  * Fetches all lightBulbToggled events from the Switch contract
  *
@@ -40,7 +45,7 @@ export async function fetchLightBulbToggledEvents(): Promise<
       eventName: "lightBulbToggled",
       data: log.data,
       topics: log.topics,
-    });
+    }) as unknown as { eventName: string; args: LightbulbLog };
     return {
       messageId: args?.messageId,
       lightBulbOwner: args?.lightBulbOwner,
