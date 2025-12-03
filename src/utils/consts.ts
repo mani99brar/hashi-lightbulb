@@ -27,7 +27,7 @@ export const YAHO_ADDRESS_ARBITRUM_SEPOLIA =
 export const REPORTERS_TO_SEPOLIA: Record<Bridges, Address> = {
   [Bridges.CCIP]: "0x8777F17F5ACE97f6d1E6Df41c94F84075fAEBf1B" as Address,
   [Bridges.LZ]: "0x25af7138f50CEf2573bb67A0227aB44045B7CC88" as Address, // 0x5abba3cb7f5b112c8704f21d497ff9e87779dc8c
-  [Bridges.VEA]: "0xaea8caB21cF6B8f9a43797624553454944386170" as Address,
+  [Bridges.VEA]: "0xE803DA11AfC72CEa6Fa1A0AfC344015Cce5410A9" as Address, // 0xaea8caB21cF6B8f9a43797624553454944386170 DEVNET
 };
 
 // Reporters live on Arbitrum Sepolia to Chiado
@@ -41,7 +41,7 @@ export const REPORTERS_TO_CHIADO: Record<Bridges, Address> = {
 export const ADAPTERS_SEPOLIA: Record<Bridges, Address> = {
   [Bridges.CCIP]: "0xc3613d84d156110Bc12aA4184C7EeFB1F8BD9cD2" as Address,
   [Bridges.LZ]: "0x5d8FA84CB2c649b19A2F3C1EC2F3210c2AE4B2F3" as Address, // 0x6edce65403992e310a62460808c4b910d972f10f
-  [Bridges.VEA]: "0x018448E5C0455f21A9EfAaE62d684ECD7Ba5aD04" as Address,
+  [Bridges.VEA]: "0x8C04D410B1F3B5907dDf4F017FAf7DF1D7f5F597" as Address, // 0x018448E5C0455f21A9EfAaE62d684ECD7Ba5aD04 --- DEVNET
 };
 
 export const ADAPTERS_CHIADO: Record<Bridges, Address> = {
