@@ -14,9 +14,9 @@
     "@layerzerolabs/lz-evm-messagelib-v2": "^2.3.44",
     "@layerzerolabs/lz-evm-oapp-v2": "^2.3.44",
     "@layerzerolabs/lz-evm-protocol-v2": "^2.3.44",
-    "next": "15.4.2",
-    "react": "19.1.0",
-    "react-dom": "19.1.0",
+    "next": "^15.4.8",
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1",
     "solidity-rlp": "^2.0.8",
     "viem": "^2.32.0"
   },
