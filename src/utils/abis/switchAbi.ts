@@ -1,49 +1,70 @@
 export const SwitchAbi = [
   {
-    type: "function",
-    name: "turnOnLightBulb",
     inputs: [
-      { name: "_lightBulbChainId", type: "uint32", internalType: "uint32" },
-      { name: "_targetAddress", type: "address", internalType: "address" },
-      { name: "_threshold", type: "uint256", internalType: "uint256" },
       {
-        name: "_reporters",
-        type: "address[]",
-        internalType: "contract IReporter[]",
+        internalType: "address",
+        name: "_veaInbox",
+        type: "address",
       },
       {
-        name: "_adapters",
-        type: "address[]",
-        internalType: "contract IAdapter[]",
+        internalType: "address",
+        name: "_lightBulb",
+        type: "address",
       },
     ],
-    outputs: [],
-    stateMutability: "payable",
+    stateMutability: "nonpayable",
+    type: "constructor",
   },
   {
-    type: "function",
-    name: "yaho",
-    inputs: [],
-    outputs: [{ name: "", type: "address", internalType: "contract IYaho" }],
-    stateMutability: "view",
-  },
-  {
-    type: "event",
-    name: "LightBulbToggled",
+    anonymous: false,
     inputs: [
       {
+        indexed: false,
+        internalType: "uint64",
         name: "messageId",
-        type: "uint256",
-        indexed: true,
-        internalType: "uint256",
+        type: "uint64",
       },
       {
+        indexed: false,
+        internalType: "address",
         name: "lightBulbOwner",
         type: "address",
-        indexed: true,
-        internalType: "address",
       },
     ],
-    anonymous: false,
+    name: "lightBulbToggled",
+    type: "event",
+  },
+  {
+    inputs: [],
+    name: "lightBulb",
+    outputs: [
+      {
+        internalType: "address",
+        name: "",
+        type: "address",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "turnOnLightBulb",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "veaInbox",
+    outputs: [
+      {
+        internalType: "contract IVeaInbox",
+        name: "",
+        type: "address",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
   },
 ];

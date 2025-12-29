@@ -3,21 +3,13 @@ import type { Address } from "viem";
 import { encodeFunctionData } from "viem";
 import { useSendTransaction } from "wagmi";
 import { SwitchAbi } from "@/utils/abis/switchAbi";
-import {
-  HashiAddress,
-  SWITCH_ADDRESS,
-  LIGHTBULB_PER_CHAIN,
-} from "@/utils/consts";
+import { SWITCH_ADDRESS_PER_CHAIN } from "@/utils/consts";
 
 export type TxnStatus = "idle" | "pending" | "success" | "error";
 
 interface UseSwitchReturn {
-  /** call this to trigger turnOnLightBulb */
-  turnOnLightBulb: (
-    threshold: number,
-    HashiAddresses: HashiAddress[],
-    account: Address
-  ) => Promise<void>;
+  /** function to call to turn on the lightbulb */
+  turnOnLightBulb: () => Promise<void>;
   /** current transaction hash (if any) */
   txHash?: string;
   /** error message (if any) */
@@ -36,6 +28,7 @@ export function useSwitch(lightbulbChainId: number): UseSwitchReturn {
   const [txHash, setTxHash] = useState<string>();
   const [error, setError] = useState<string>();
   const { data: hash, sendTransaction } = useSendTransaction();
+  const SWITCH_ADDRESS = SWITCH_ADDRESS_PER_CHAIN[lightbulbChainId];
 
   useEffect(() => {
     if (hash) {
@@ -43,12 +36,7 @@ export function useSwitch(lightbulbChainId: number): UseSwitchReturn {
     }
   }, [hash]);
 
-  const turnOnLightBulb = async (
-    threshold: number,
-    bridges: HashiAddress[]
-  ): Promise<void> => {
-    const reporters: Address[] = bridges.map((b) => b.reporter);
-    const adapters: Address[] = bridges.map((b) => b.adapter);
+  const turnOnLightBulb = async (): Promise<void> => {
     try {
       setStatus("pending");
       setError(undefined);
@@ -56,13 +44,7 @@ export function useSwitch(lightbulbChainId: number): UseSwitchReturn {
       const data = encodeFunctionData({
         abi: SwitchAbi,
         functionName: "turnOnLightBulb",
-        args: [
-          lightbulbChainId,
-          LIGHTBULB_PER_CHAIN[lightbulbChainId],
-          threshold,
-          reporters,
-          adapters,
-        ],
+        args: [],
       });
       sendTransaction({
         to: SWITCH_ADDRESS,

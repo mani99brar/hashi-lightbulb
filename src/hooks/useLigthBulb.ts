@@ -7,7 +7,7 @@ import { LIGHTBULB_PER_CHAIN } from "@/utils/consts";
 
 interface UseLightBulbReturn {
   /** `true` if on, `false` if off, `undefined` if not yet loaded or no address passed */
-  isOn?: boolean | null;
+  isOn: boolean | null;
   /** request in flight */
   loading: boolean;
   /** error message, if call failed */

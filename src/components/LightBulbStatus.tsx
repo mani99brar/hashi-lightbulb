@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import { useLightBulb } from "@/hooks/useLigthBulb";
 import { Address, Chain } from "viem";
 import { gnosisChiado, sepolia } from "viem/chains";
+import { Lightbulb } from "./Lightbulb";
+import { useSwitch } from "@/hooks/useSwitch";
 
 const LIGHTBULB_CHAINS: Chain[] = [gnosisChiado, sepolia];
 
@@ -12,13 +14,15 @@ export function LightbulbStatusDialog({
   address,
   lightbulbChainId,
   setLightbulbChainId,
+  setHistory,
 }: {
   address: string | undefined;
   lightbulbChainId: number;
   setLightbulbChainId: React.Dispatch<React.SetStateAction<number>>;
+  setHistory: React.Dispatch<React.SetStateAction<string[]>>;
 }) {
-  // optional override input
-  const [inputAddress, setInputAddress] = useState<string>("");
+  const { turnOnLightBulb, txHash, status } = useSwitch(lightbulbChainId);
+
   // current lightbulb status
   const { isOn, loading, refetch } = useLightBulb(
     lightbulbChainId,
@@ -30,21 +34,12 @@ export function LightbulbStatusDialog({
     refetch(lightbulbChainId);
   }, [lightbulbChainId, refetch]);
 
-  /**
-   * Trigger a status check for the given address (or connected address if none)
-   */
-  const handleCheckStatus = async () => {
-    const addrToCheck = address;
-    if (!addrToCheck) {
-      alert("Please connect your wallet or enter an address");
+  const handleToggleLightbulb = async () => {
+    if (!address) {
+      alert("Please connect your wallet first");
       return;
     }
-    try {
-      refetch();
-    } catch (err) {
-      console.error("Failed to fetch status", err);
-      alert("Error checking lightbulb status");
-    }
+    await turnOnLightBulb();
   };
 
   const handleLightbulbChain = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -54,11 +49,27 @@ export function LightbulbStatusDialog({
     }
   };
 
+  useEffect(() => {
+    if (!txHash) return;
+    setHistory((prev) => {
+      const updated = [...prev, txHash];
+      try {
+        localStorage.setItem(
+          `VeaLightbulbHistory-${lightbulbChainId}`,
+          JSON.stringify(updated)
+        );
+      } catch (e) {
+        console.error("Failed to save history to localStorage", e);
+      }
+      return updated;
+    });
+  }, [txHash]);
+
   return (
-    <div className="bg-black border-2 border-white rounded-lg shadow-lg w-1/2 p-6 mx-auto flex flex-col justify-between">
-      <div>
+    <div className="bg-[#009eb0] border-2 border-white rounded-lg shadow-lg w-3/4 mx-auto flex justify-between">
+      <div className="w-3/5 flex flex-col justify-between p-6 gap-8">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">Lightbulb Status</h2>
+          <h2 className="text-xl font-semibold">Switch</h2>
 
           {/* Lightbulb Chain Selector */}
           <label className="block text-sm">
@@ -76,50 +87,29 @@ export function LightbulbStatusDialog({
             </select>
           </label>
         </div>
-        {/* Address Input */}
-        <div className="mb-4">
-          <label
-            htmlFor="address"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
-            Address
-          </label>
-          <input
-            id="address"
-            type="text"
-            value={inputAddress}
-            onChange={(e) => setInputAddress(e.target.value)}
-            placeholder={address || "Connect wallet to auto-fill"}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
-          />
-        </div>
+        <p>
+          The lighbulb state is currently synchronized to{" "}
+          {LIGHTBULB_CHAINS.find((c) => c.id === lightbulbChainId)?.name} <br />
+          Toggle the switch on Arbitrum Sepolia to send a message with Vea and
+          turn on the lightbulb on selected chain.
+        </p>
 
         {/* Check Status Button */}
         <div className="mb-4">
           <button
-            onClick={handleCheckStatus}
-            className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+            onClick={handleToggleLightbulb}
+            className="w-full px-4 py-2 bg-[#0064b0] text-white rounded-lg hover:bg-[#005080] transition"
           >
-            {loading ? "Checking..." : "Check Status"}
+            {loading ? "Turning On..." : "Turn On Lightbulb"}
           </button>
         </div>
       </div>
-      {/* Status Display */}
-      <p
-        className={`text-4xl font-large ${
-          isOn === null
-            ? "text-gray-400"
-            : isOn
-            ? "text-green-600"
-            : "text-red-600"
-        }`}
-      >
-        {isOn === null
-          ? "No Status"
-          : isOn
-          ? "The lightbulb is ON"
-          : "The lightbulb is OFF"}
-      </p>
+      <div className="w-2/5 flex flex-col gap-8 items-center bg-[#0064b0]">
+        <p className="p-6 text-xl">Status : {isOn ? "ON" : "OFF"}</p>
+        <div>
+          <Lightbulb isOn={isOn} size="lg" />
+        </div>
+      </div>
     </div>
   );
 }

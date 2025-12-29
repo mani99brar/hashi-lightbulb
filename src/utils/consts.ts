@@ -52,8 +52,13 @@ export const ADAPTERS_CHIADO: Record<Bridges, Address> = {
 
 // Per-chain Lightbulb + Yaru targets
 export const LIGHTBULB_PER_CHAIN: Record<number, Address> = {
-  [CHAIN_IDS.SEPOLIA]: "0x44d3d3d8cB731958Df78DAf531b16E23DfB27450" as Address,
-  [CHAIN_IDS.CHIADO]: "0x5e6fcfCaa61e4Db57858b7611eD2eC9Fb8e450dd" as Address, // replace with Chiado Lightbulb
+  [CHAIN_IDS.SEPOLIA]: "0x45138BC4E364A16919C4571699171d774A7590BD" as Address,
+  [CHAIN_IDS.CHIADO]: "0xe762317D0D92cDcFdf6028D967F678d58F2c2f49" as Address, // replace with Chiado Lightbulb
+};
+
+export const SWITCH_ADDRESS_PER_CHAIN: Record<number, Address> = {
+  [CHAIN_IDS.SEPOLIA]: "0xc2C301d04797aD5e7ddc114dDE166Db9D253d965" as Address,
+  [CHAIN_IDS.CHIADO]: "0xAA5cA1780e6EE781f4550370c504d1f22eA859af" as Address, // replace with Chiado Switch
 };
 
 export const YARU_PER_CHAIN: Record<number, Address> = {
