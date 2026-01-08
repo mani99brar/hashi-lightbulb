@@ -31,7 +31,6 @@ export async function fetchLightBulbToggledEvents(): Promise<
   );
   // Retrieve raw logs
   const latestBlock = await arbSepoliaPublicClient.getBlockNumber();
-  console.log("Latest block:", latestBlock);
   const logs = await arbSepoliaPublicClient.getLogs({
     address: SWITCH_ADDRESS,
     fromBlock: latestBlock - BigInt(499),

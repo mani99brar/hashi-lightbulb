@@ -39,9 +39,7 @@ createAppKit({
 export default function Home() {
   const [history, setHistory] = useState<string[]>([]);
   const [lightbulbChainId, setLightbulbChainId] = useState<number>(sepolia.id);
-  const { chainId: connectedChainId } = useAppKitNetwork();
   const { address } = useAppKitAccount();
-  console.log("Connected chainId", connectedChainId);
 
   useEffect(() => {
     const stored = localStorage.getItem(

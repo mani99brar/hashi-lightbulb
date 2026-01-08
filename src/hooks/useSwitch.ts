@@ -47,13 +47,6 @@ export function useSwitch(
   const SWITCH_ADDRESS = SWITCH_ADDRESS_PER_CHAIN[lightbulbChainId];
 
   useEffect(() => {
-    console.log("useSwitch effect:", {
-      hash,
-      isConfirming,
-      isConfirmed,
-      sendError,
-      receiptError,
-    });
     if (isConfirming) {
       setStatus("pending");
     }

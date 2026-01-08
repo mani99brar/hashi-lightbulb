@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useAppKitNetwork } from "@reown/appkit/react";
 import { useLightBulb } from "@/hooks/useLigthBulb";
 import { Address, Chain } from "viem";
 import { arbitrumSepolia, gnosisChiado, sepolia } from "viem/chains";
@@ -21,6 +22,7 @@ export function LightbulbStatusDialog({
   setLightbulbChainId: React.Dispatch<React.SetStateAction<number>>;
   setHistory: React.Dispatch<React.SetStateAction<string[]>>;
 }) {
+  const { chainId } = useAppKitNetwork();
   const [buttonMsg, setButtonMsg] = useState<string>("");
   const { turnOnLightBulb, txHash, status } = useSwitch(
     arbitrumSepolia.id,
@@ -43,6 +45,12 @@ export function LightbulbStatusDialog({
       alert("Please connect your wallet first");
       return;
     }
+    if (chainId != arbitrumSepolia.id) {
+      alert(
+        "Please switch to Arbitrum Sepolia network to toggle the lightbulb"
+      );
+      return;
+    }
     await turnOnLightBulb();
   };
 
@@ -54,16 +62,15 @@ export function LightbulbStatusDialog({
   };
 
   useEffect(() => {
-    console.log("Status changed:", status);
-    console.log("TxHash:", txHash);
-    console.log("Loading:", loading);
     if (loading) {
       setButtonMsg("Getting Lightbulb state.");
     }
     if (status === "success") {
       setButtonMsg("Message sent to Lightbulb!");
-    } else if (status !== "idle") {
+    } else if (status === "pending") {
       setButtonMsg(`Turning On...`);
+    } else if (status === "error") {
+      setButtonMsg("Retry turning on lightbulb.");
     } else {
       setButtonMsg("Turn On Lightbulb");
     }
