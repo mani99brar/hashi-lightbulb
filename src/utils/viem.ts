@@ -24,8 +24,23 @@ export function getPublicClient(chainId: number) {
       chain,
       transport: http(process.env.NEXT_PUBLIC_ARBITRUM_SEPOLIA_RPC),
     });
-  } else {
-    client = createPublicClient({ chain, transport: http() });
+  } else if (chain.id === gnosisChiado.id) {
+    client = createPublicClient({
+      chain,
+      transport: http(process.env.NEXT_PUBLIC_CHIADO_RPC),
+    });
+  }
+  else if (chain.id === sepolia.id) {
+    client = createPublicClient({
+      chain,
+      transport: http(process.env.NEXT_PUBLIC_SEPOLIA_RPC),
+    });
+  }
+    else {
+      client = createPublicClient({
+      chain,
+      transport: http(),
+      });
   }
 
   _publicClients.set(chain.id, client);
