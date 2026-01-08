@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import type { Address } from "viem";
 import { encodeFunctionData } from "viem";
 import { useSendTransaction } from "wagmi";
 import { SwitchAbi } from "@/utils/abis/switchAbi";
 import { SWITCH_ADDRESS_PER_CHAIN } from "@/utils/consts";
-
+import { getPublicClient } from "@/utils/viem";
+import { arbitrumSepolia } from "viem/chains";
 export type TxnStatus = "idle" | "pending" | "success" | "error";
 
 interface UseSwitchReturn {
@@ -46,10 +47,13 @@ export function useSwitch(lightbulbChainId: number): UseSwitchReturn {
         functionName: "turnOnLightBulb",
         args: [],
       });
+      const { maxFeePerGas, maxPriorityFeePerGas } = await getFees();
       sendTransaction({
         to: SWITCH_ADDRESS,
         data,
         value: BigInt(0),
+        maxFeePerGas,
+        maxPriorityFeePerGas,
       });
       setStatus("success");
     } catch (e) {
@@ -58,6 +62,20 @@ export function useSwitch(lightbulbChainId: number): UseSwitchReturn {
       throw e;
     }
   };
+
+  const getFees = useCallback(async () => {
+    const publicClient = getPublicClient(arbitrumSepolia.id);
+    const block = await publicClient.getBlock();
+    const baseFeePerGas = block.baseFeePerGas ?? BigInt(0);
+    // maxFeePerGas = baseFee * 1.2 + 2 gwei
+    const maxPriorityFeePerGas = BigInt(2_000_000_000); // 2 gwei
+    const maxFeePerGas =
+      (baseFeePerGas * BigInt(12)) / BigInt(10) + maxPriorityFeePerGas;
+    return {
+      maxFeePerGas,
+      maxPriorityFeePerGas,
+    };
+  }, []);
 
   return { turnOnLightBulb, txHash, error, status };
 }
