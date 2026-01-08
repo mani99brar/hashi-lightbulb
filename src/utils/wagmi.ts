@@ -18,7 +18,7 @@ export const metadata = {
 };
 
 // for custom networks visit -> https://docs.reown.com/appkit/react/core/custom-networks
-export const networks = [sepolia, arbitrumSepolia, gnosisChiado] as [
+export const networks = [arbitrumSepolia] as [
   AppKitNetwork,
   ...AppKitNetwork[]
 ];
