@@ -1,7 +1,7 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useLightBulb } from "@/hooks/useLigthBulb";
 import { Address, Chain } from "viem";
-import { gnosisChiado, sepolia } from "viem/chains";
+import { arbitrumSepolia, gnosisChiado, sepolia } from "viem/chains";
 import { Lightbulb } from "./Lightbulb";
 import { useSwitch } from "@/hooks/useSwitch";
 
@@ -21,7 +21,11 @@ export function LightbulbStatusDialog({
   setLightbulbChainId: React.Dispatch<React.SetStateAction<number>>;
   setHistory: React.Dispatch<React.SetStateAction<string[]>>;
 }) {
-  const { turnOnLightBulb, txHash, status } = useSwitch(lightbulbChainId);
+  const [buttonMsg, setButtonMsg] = useState<string>("");
+  const { turnOnLightBulb, txHash, status } = useSwitch(
+    arbitrumSepolia.id,
+    lightbulbChainId
+  );
 
   // current lightbulb status
   const { isOn, loading, refetch } = useLightBulb(
@@ -50,6 +54,20 @@ export function LightbulbStatusDialog({
   };
 
   useEffect(() => {
+    console.log("Status changed:", status);
+    console.log("TxHash:", txHash);
+    console.log("Loading:", loading);
+    if (loading) {
+      setButtonMsg("Getting Lightbulb state.");
+    }
+    if (status === "success") {
+      setButtonMsg("Message sent to Lightbulb!");
+    } else if (status !== "idle") {
+      setButtonMsg(`Turning On...`);
+    } else {
+      setButtonMsg("Turn On Lightbulb");
+    }
+
     if (!txHash) return;
     setHistory((prev) => {
       const updated = [...prev, txHash];
@@ -63,7 +81,7 @@ export function LightbulbStatusDialog({
       }
       return updated;
     });
-  }, [txHash]);
+  }, [txHash, loading, status]);
 
   return (
     <div className="bg-[#009eb0] border-2 border-white rounded-lg shadow-lg w-3/4 mx-auto flex justify-between">
@@ -100,7 +118,7 @@ export function LightbulbStatusDialog({
             onClick={handleToggleLightbulb}
             className="w-full px-4 py-2 bg-[#0064b0] text-white rounded-lg hover:bg-[#005080] transition"
           >
-            {loading ? "Turning On..." : "Turn On Lightbulb"}
+            {buttonMsg}
           </button>
         </div>
       </div>

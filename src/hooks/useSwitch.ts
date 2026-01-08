@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import type { Address } from "viem";
 import { encodeFunctionData } from "viem";
-import { useSendTransaction } from "wagmi";
+import { useSendTransaction, useWaitForTransactionReceipt } from "wagmi";
 import { SwitchAbi } from "@/utils/abis/switchAbi";
 import { SWITCH_ADDRESS_PER_CHAIN } from "@/utils/consts";
 import { getPublicClient } from "@/utils/viem";
@@ -24,18 +24,61 @@ interface UseSwitchReturn {
  *
  * @param contractAddress - deployed Switch contract address
  */
-export function useSwitch(lightbulbChainId: number): UseSwitchReturn {
+export function useSwitch(
+  switchChainId: number,
+  lightbulbChainId: number
+): UseSwitchReturn {
   const [status, setStatus] = useState<TxnStatus>("idle");
   const [txHash, setTxHash] = useState<string>();
   const [error, setError] = useState<string>();
-  const { data: hash, sendTransaction } = useSendTransaction();
+  const {
+    data: hash,
+    sendTransaction,
+    error: sendError,
+  } = useSendTransaction();
+  const {
+    isLoading: isConfirming,
+    isSuccess: isConfirmed,
+    error: receiptError,
+  } = useWaitForTransactionReceipt({
+    hash,
+    chainId: switchChainId,
+  });
   const SWITCH_ADDRESS = SWITCH_ADDRESS_PER_CHAIN[lightbulbChainId];
 
   useEffect(() => {
-    if (hash) {
+    console.log("useSwitch effect:", {
+      hash,
+      isConfirming,
+      isConfirmed,
+      sendError,
+      receiptError,
+    });
+    if (isConfirming) {
+      setStatus("pending");
+    }
+    if (hash && isConfirmed) {
+      setStatus("success");
       setTxHash(hash);
     }
-  }, [hash]);
+    if (sendError || receiptError) {
+      setError((sendError || receiptError)?.message || "Tx failed");
+      setStatus("error");
+    }
+  }, [hash, isConfirming, isConfirmed, sendError, receiptError]);
+
+  const getFees = useCallback(async () => {
+    const publicClient = getPublicClient(switchChainId);
+    const block = await publicClient.getBlock();
+    const baseFeePerGas = block.baseFeePerGas ?? BigInt(0);
+    // maxFeePerGas = baseFee * 1.2 + 2 gwei
+    const maxPriorityFeePerGas = BigInt(2_000_000_000); // 2 gwei
+    const maxFeePerGas = baseFeePerGas * BigInt(100) + maxPriorityFeePerGas;
+    return {
+      maxFeePerGas,
+      maxPriorityFeePerGas,
+    };
+  }, []);
 
   const turnOnLightBulb = async (): Promise<void> => {
     try {
@@ -54,28 +97,14 @@ export function useSwitch(lightbulbChainId: number): UseSwitchReturn {
         value: BigInt(0),
         maxFeePerGas,
         maxPriorityFeePerGas,
+        chainId: switchChainId,
       });
-      setStatus("success");
     } catch (e) {
       setError(String(e));
       setStatus("error");
       throw e;
     }
   };
-
-  const getFees = useCallback(async () => {
-    const publicClient = getPublicClient(arbitrumSepolia.id);
-    const block = await publicClient.getBlock();
-    const baseFeePerGas = block.baseFeePerGas ?? BigInt(0);
-    // maxFeePerGas = baseFee * 1.2 + 2 gwei
-    const maxPriorityFeePerGas = BigInt(2_000_000_000); // 2 gwei
-    const maxFeePerGas =
-      (baseFeePerGas * BigInt(12)) / BigInt(10) + maxPriorityFeePerGas;
-    return {
-      maxFeePerGas,
-      maxPriorityFeePerGas,
-    };
-  }, []);
 
   return { turnOnLightBulb, txHash, error, status };
 }
