@@ -103,16 +103,18 @@ export default function Home() {
         <QueryClientProvider client={queryClient}>
           <>
             <Header />
-            <div className="flex w-full mb-40 justify-around">
-              <LightbulbControls
-                {...{
-                  setHistory,
-                  route,
-                }}
-              />
-              <LightbulbStatusDialog {...{ address, route, setRoute }} />
+            <div className="flex flex-col w-full">
+              <div className="flex w-full justify-around">
+                <LightbulbControls
+                  {...{
+                    setHistory,
+                    route,
+                  }}
+                />
+                <LightbulbStatusDialog {...{ address, route, setRoute }} />
+              </div>
+              {history.length > 0 && <HistoryTable {...{ history }} />}
             </div>
-            {history.length > 0 && <HistoryTable {...{ history }} />}
           </>
         </QueryClientProvider>
       </WagmiProvider>

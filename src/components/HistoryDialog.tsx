@@ -51,7 +51,7 @@ export function HistoryTable({ history }: HistoryTableProps) {
     return;
   }
   return (
-    <div className="mx-auto overflow-scroll mt-40 bg-black border-2 border-white w-full rounded-lg shadow-md p-6">
+    <div className="mx-auto mt-10 bg-black border-2 border-white w-full rounded-lg shadow-md p-6">
       <div className="flex justify-between">
         <h2 className="text-xl font-semibold mb-4">Transaction History</h2>
         <button
@@ -63,9 +63,9 @@ export function HistoryTable({ history }: HistoryTableProps) {
           Delete All
         </button>
       </div>
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto overflow-y-auto max-h-96">
         <table className="w-full text-left border-collapse">
-          <thead>
+          <thead className="sticky top-0 bg-black">
             <tr>
               <th className="pb-2 border-b w-1/6">Route</th>
               <th className="pb-2 border-b w-1/6">Switch TXN</th>

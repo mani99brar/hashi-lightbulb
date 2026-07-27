@@ -166,7 +166,7 @@ export function LightbulbControls({
               />
               <span
                 className={`ml-3 ${
-                  selectedBridges[bridge] ? "text-blue-600" : "text-gray-700"
+                  selectedBridges[bridge] ? "text-blue-600" : "text-white"
                 }`}
               >
                 {bridge}
