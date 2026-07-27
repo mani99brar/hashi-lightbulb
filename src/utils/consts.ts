@@ -215,11 +215,11 @@ export const ROUTES: Record<string, Route> = {
   [routeKey(CHAIN_IDS.ARB_SEPOLIA, CHAIN_IDS.BASE_SEPOLIA)]: {
     source: CHAIN_IDS.ARB_SEPOLIA,
     destination: CHAIN_IDS.BASE_SEPOLIA,
-    switch: "0x9791F68665dB93CC340dBC00d07561E31A200424" as Address,
+    switch: "0x85Fc947D27b81383684fBA31CACA728c5B0FE468" as Address,
     // broadcast/421614-84532.json has no yaho entry; Yaho is shared per source
     // chain on Arbitrum Sepolia (same address in both other 421614 routes)
     yaho: "0xDbdF80c87f414fac8342e04D870764197bD3bAC7" as Address,
-    lightbulb: "0x6D90FA6EC82FA119c5c2569cCAEd191B524f34f4" as Address,
+    lightbulb: "0x0e389a88d21B1dEFa5291cdfda0e54FdA99bA6ec" as Address,
     yaru: "0xFe9fF402A80EF4aBA0181759ad4ECDAfc815dFbf" as Address,
     bridges: {
       [Bridges.CCIP]: {
