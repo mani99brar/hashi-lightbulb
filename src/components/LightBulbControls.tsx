@@ -1,41 +1,34 @@
 // src/components/LightbulbControls.tsx
-import React, { useEffect, useState, useCallback } from "react";
-import { arbitrumSepolia } from "viem/chains";
+import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { type Address } from "viem";
 import { useAppKitAccount } from "@reown/appkit/react";
-import {
-  HashiAddress,
-  BRIDGES_PER_CHAIN,
-  YAHO_ADDRESS_ARBITRUM_SEPOLIA,
-} from "@/utils/consts";
+import { Bridges, HashiAddress, Route } from "@/utils/consts";
 import { useSwitch } from "@/hooks/useSwitch";
 import { HistoryEntry } from "./HistoryDialog";
-import { ensureChain } from "@/utils/viem";
-import { YahoAbi } from "@/utils/abis/yahoAbi";
-import { encodeAbiParameters, decodeEventLog } from "viem";
-import type { MessageDispatchedLog } from "@/utils/types";
-
-type Bridge = "LayerZero" | "CCIP" | "Vea";
+import { ensureChain, CHAIN_BY_ID } from "@/utils/viem";
 
 export function LightbulbControls({
   setHistory,
-  lightbulbChainId,
+  route,
 }: {
   setHistory: React.Dispatch<React.SetStateAction<HistoryEntry[]>>;
-  lightbulbChainId: number;
+  route: Route;
 }) {
   const [threshold, setThreshold] = useState<number | "">("");
-  const { turnOnLightBulb, txHash, status } = useSwitch(lightbulbChainId);
+  const { turnOnLightBulb, txHash, status } = useSwitch(route);
   const [isLoading, setIsLoading] = useState(false);
-  const [bridges, setBridges] = useState<HashiAddress[]>([]);
+  const [confirmedTx, setConfirmedTx] = useState<string | null>(null);
+  const availableBridges = Object.keys(route.bridges) as Bridges[];
   const [selectedBridges, setSelectedBridges] = useState<
-    Record<Bridge, boolean>
-  >({
-    LayerZero: false,
-    CCIP: false,
-    Vea: false,
-  });
+    Partial<Record<Bridges, boolean>>
+  >({});
   const { address: account } = useAppKitAccount();
+
+  // reset bridge selection when the route changes
+  useEffect(() => {
+    setSelectedBridges({});
+  }, [route]);
+
   const handleThresholdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     if (val === "") {
@@ -47,12 +40,18 @@ export function LightbulbControls({
     }
   };
 
-  const toggleBridge = (bridge: Bridge) => {
+  const toggleBridge = (bridge: Bridges) => {
     setSelectedBridges((prev) => ({
       ...prev,
       [bridge]: !prev[bridge],
     }));
   };
+
+  const chosenBridges = useMemo(
+    () => availableBridges.filter((bridge) => selectedBridges[bridge]),
+    // availableBridges is derived from route, which covers it as a dep
+    [route, selectedBridges] // eslint-disable-line react-hooks/exhaustive-deps
+  );
 
   const handleSubmit = async () => {
     if (!account) {
@@ -63,13 +62,9 @@ export function LightbulbControls({
       alert("Please enter a valid non-negative threshold value");
       return;
     }
-    const chosen = (Object.keys(selectedBridges) as Bridge[]).filter(
-      (bridge) => selectedBridges[bridge]
+    const selectedHashiAddresses: HashiAddress[] = chosenBridges.map(
+      (bridge) => route.bridges[bridge]!
     );
-    const selectedHashiAddresses: HashiAddress[] = chosen.map(
-      (bridge) => BRIDGES_PER_CHAIN[lightbulbChainId][bridge]
-    );
-    setBridges(selectedHashiAddresses);
     await turnOnLightBulb(
       threshold,
       selectedHashiAddresses,
@@ -86,61 +81,43 @@ export function LightbulbControls({
   }, [status]);
 
   const createHistoryEntry = useCallback(
-    (messageNonce: number, txHashValue: string) => {
+    (txHashValue: string) => {
       return {
-        chainId: lightbulbChainId,
-        nonce: messageNonce.toString(),
-        data: encodeAbiParameters([{ type: "address" }], [account as Address]),
+        source: route.source,
+        destination: route.destination,
         switchTx: txHashValue,
         threshold: Number(threshold),
-        bridges,
-        layerZero: { txHash: "", isUsed: selectedBridges.LayerZero },
-        CCIP: { txHash: "", isUsed: selectedBridges.CCIP },
-        vea: { txHash: "", isUsed: selectedBridges.Vea },
-        executed: false,
+        bridgeNames: chosenBridges,
       } as HistoryEntry;
     },
-    [lightbulbChainId, account, threshold, bridges, selectedBridges]
+    [route, threshold, chosenBridges]
   );
 
+  // last tx hash already handled, so re-renders can't append duplicates
+  const processedTxRef = useRef<string | null>(null);
+
   useEffect(() => {
-    if (!txHash) return;
+    if (!txHash || processedTxRef.current === txHash) return;
+    processedTxRef.current = txHash;
 
     (async () => {
       try {
-        const { publicClient: arbSepoliaPublicClient } = await ensureChain(
-          arbitrumSepolia.id
+        const { publicClient: sourcePublicClient } = await ensureChain(
+          route.source
         );
-        const receipt = await arbSepoliaPublicClient.waitForTransactionReceipt({
+        await sourcePublicClient.waitForTransactionReceipt({
           hash: txHash as `0x${string}`,
           pollingInterval: 1_000,
         });
 
-        const yahoLogs = receipt.logs.filter(
-          (log) =>
-            log.address.toLowerCase() ===
-            YAHO_ADDRESS_ARBITRUM_SEPOLIA.toLowerCase()
-        );
+        setConfirmedTx(txHash);
 
-        let messageNonce = 0;
-        if (yahoLogs[0]) {
-          try {
-            const decoded = decodeEventLog({
-              abi: YahoAbi,
-              data: yahoLogs[0].data,
-              topics: yahoLogs[0].topics,
-            }) as unknown as MessageDispatchedLog;
-            if (decoded.eventName === "MessageDispatched") {
-              messageNonce = Number(decoded.args.message.nonce);
-            }
-          } catch (err) {
-            console.error("Failed to decode Yaho log:", err);
-          }
-        }
-
-        const bridgeEntry = createHistoryEntry(messageNonce, txHash);
+        const bridgeEntry = createHistoryEntry(txHash);
 
         setHistory((prev) => {
+          if (prev.some((entry) => entry.switchTx === bridgeEntry.switchTx)) {
+            return prev;
+          }
           const updated = [...prev, bridgeEntry];
           try {
             localStorage.setItem("lightbulbHistory", JSON.stringify(updated));
@@ -153,7 +130,9 @@ export function LightbulbControls({
         console.error("Transaction confirmation failed:", error);
       }
     })();
-  }, [txHash, createHistoryEntry, setHistory]);
+  }, [txHash, createHistoryEntry, setHistory, route]);
+
+  const explorerUrl = CHAIN_BY_ID[route.source]?.blockExplorers?.default.url;
 
   return (
     <div className="w-1/2 mr-10 mx-auto bg-black border-2 border-white p-6 rounded-lg shadow-md">
@@ -177,11 +156,11 @@ export function LightbulbControls({
       <div className="mb-6">
         <span className="block text-lg font-medium mb-2">Select Bridge</span>
         <div className="space-y-3 pl-2">
-          {(["LayerZero", "CCIP", "Vea"] as Bridge[]).map((bridge) => (
+          {availableBridges.map((bridge) => (
             <label key={bridge} className="flex items-center">
               <input
                 type="checkbox"
-                checked={selectedBridges[bridge]}
+                checked={!!selectedBridges[bridge]}
                 onChange={() => toggleBridge(bridge)}
                 className="h-5 w-5 text-blue-600 border-gray-300 rounded"
               />
@@ -204,6 +183,40 @@ export function LightbulbControls({
       >
         {isLoading ? "Turning On Lightbulb..." : "Turn On Lightbulb"}
       </button>
+
+      {/* Success Popup */}
+      {confirmedTx && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70">
+          <div className="bg-black border-2 border-white rounded-lg p-6 max-w-md w-full mx-4 text-center">
+            <h3 className="text-2xl font-semibold text-green-500 mb-3">
+              Transaction Successful!
+            </h3>
+            <p className="mb-2">
+              Your message was dispatched. The lightbulb will turn on once the
+              selected bridges relay it.
+            </p>
+            <p className="mb-4 break-all text-sm">
+              {explorerUrl ? (
+                <a
+                  href={`${explorerUrl}/tx/${confirmedTx}`}
+                  target="_blank"
+                  className="text-blue-500 hover:underline"
+                >
+                  {confirmedTx}
+                </a>
+              ) : (
+                confirmedTx
+              )}
+            </p>
+            <button
+              onClick={() => setConfirmedTx(null)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

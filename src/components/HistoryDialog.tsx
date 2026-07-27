@@ -1,89 +1,46 @@
 import React from "react";
-import { Hex, Address, encodeFunctionData } from "viem";
-import { ensureChain, CHAIN_BY_ID } from "@/utils/viem";
-import {
-  HashiAddress,
-  LIGHTBULB_PER_CHAIN,
-  SWITCH_ADDRESS,
-  YARU_PER_CHAIN,
-} from "@/utils/consts";
-import { YaruAbi } from "@/utils/abis/yaruAbi";
-import { useSendTransaction } from "wagmi";
+import { CHAIN_BY_ID } from "@/utils/viem";
+import { Bridges, TESTNET_CHAIN_IDS } from "@/utils/consts";
 
 export interface HistoryEntry {
-  chainId: number;
-  nonce: string;
-  data: Hex;
+  /** chain the Switch transaction was sent on */
+  source: number;
+  /** chain the Lightbulb lives on */
+  destination: number;
   threshold: number;
-  bridges: HashiAddress[];
+  /** which bridges were selected for this message */
+  bridgeNames: Bridges[];
   /** original switch transaction hash */
   switchTx: string;
-  /** LayerZero destination transaction hash */
-  layerZero: {
-    txHash: string;
-    isUsed: boolean;
-  };
-  /** CCIP relayer transaction hash */
-  CCIP: {
-    txHash: string;
-    isUsed: boolean;
-  };
-  /** Vea relayer transaction hash */
-  vea: {
-    txHash: string;
-    isUsed: boolean;
-  };
-  /** has this message already been executed? */
-  executed: boolean;
 }
 
 interface HistoryTableProps {
-  chainId: number;
   history: HistoryEntry[];
 }
 
-export function HistoryTable({ chainId, history }: HistoryTableProps) {
-  const [isDeleted, setIsDeleted] = React.useState(false);
-  const { sendTransaction } = useSendTransaction();
-  const onExecute = async (entry: HistoryEntry) => {
-    const reporters: Address[] = entry.bridges.map((b) => b.reporter);
-    const adapters: Address[] = entry.bridges.map((b) => b.adapter);
-    try {
-      // Build the Message struct for executeMessages
-      const message = {
-        nonce: entry.nonce,
-        data: entry.data,
-        targetChainId: chainId,
-        threshold: entry.threshold,
-        sender: SWITCH_ADDRESS,
-        receiver: LIGHTBULB_PER_CHAIN[chainId],
-        reporters,
-        adapters,
-      };
+const ALL_BRIDGES = Object.values(Bridges);
 
-      const { publicClient } = await ensureChain(chainId);
-      const estimatedGas = await publicClient.estimateContractGas({
-        address: YARU_PER_CHAIN[chainId],
-        abi: YaruAbi,
-        functionName: "executeMessages",
-        args: [[message]],
-      });
-      const data = encodeFunctionData({
-        abi: YaruAbi,
-        functionName: "executeMessages",
-        args: [[message]],
-      });
-      sendTransaction({
-        to: YARU_PER_CHAIN[chainId],
-        data,
-        chainId,
-        gas: estimatedGas,
-      });
-    } catch (err) {
-      console.error("executeMessages failed", err);
-      alert(`Execution failed: ${err}`);
-    }
-  };
+function bridgeStatusLink(
+  bridge: Bridges,
+  entry: HistoryEntry,
+): string | undefined {
+  const isTestnet = TESTNET_CHAIN_IDS.includes(entry.source);
+  switch (bridge) {
+    case Bridges.LZ:
+      return `https://${isTestnet ? "testnet." : ""}layerzeroscan.com/tx/${
+        entry.switchTx
+      }`;
+    case Bridges.CCIP:
+      return "https://ccip.chain.link/";
+    case Bridges.DEBRIDGE:
+      return "https://app.debridge.finance/transactions";
+    default:
+      return undefined;
+  }
+}
+
+export function HistoryTable({ history }: HistoryTableProps) {
+  const [isDeleted, setIsDeleted] = React.useState(false);
 
   const onDelete = () => {
     localStorage.setItem("lightbulbHistory", JSON.stringify([]));
@@ -94,7 +51,7 @@ export function HistoryTable({ chainId, history }: HistoryTableProps) {
     return;
   }
   return (
-    <div className="mx-auto bg-black border-2 border-white w-full rounded-lg shadow-md p-6">
+    <div className="mx-auto overflow-scroll mt-40 bg-black border-2 border-white w-full rounded-lg shadow-md p-6">
       <div className="flex justify-between">
         <h2 className="text-xl font-semibold mb-4">Transaction History</h2>
         <button
@@ -110,77 +67,60 @@ export function HistoryTable({ chainId, history }: HistoryTableProps) {
         <table className="w-full text-left border-collapse">
           <thead>
             <tr>
+              <th className="pb-2 border-b w-1/6">Route</th>
               <th className="pb-2 border-b w-1/6">Switch TXN</th>
-              <th className="pb-2 border-b w-1/6">LayerZero</th>
-              <th className="pb-2 border-b w-1/6">CCIP</th>
-              <th className="pb-2 border-b w-1/6">Vea</th>
-              <th className="pb-2 border-b w-2/6">Action</th>
+              {ALL_BRIDGES.map((bridge) => (
+                <th key={bridge} className="pb-2 border-b w-1/6">
+                  {bridge}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
-            {history.map((entry) => (
-              <tr key={entry.switchTx}>
-                <td className="py-2">
-                  <a
-                    href={`https://sepolia.arbiscan.io/tx/${entry.switchTx}`}
-                    target="_blank"
-                    className="text-blue-600 hover:underline"
-                  >
-                    {entry.switchTx.slice(0, 6)}…{entry.switchTx.slice(-4)}
-                  </a>
-                </td>
-                <td className="py-2">
-                  {entry.layerZero.isUsed ? (
+            {history.map((entry) => {
+              const explorer =
+                CHAIN_BY_ID[entry.source]?.blockExplorers?.default.url;
+              return (
+                <tr key={entry.switchTx}>
+                  <td className="py-2">
+                    {CHAIN_BY_ID[entry.source]?.name ?? entry.source} →{" "}
+                    {CHAIN_BY_ID[entry.destination]?.name ?? entry.destination}
+                  </td>
+                  <td className="py-2">
                     <a
-                      href={`https://testnet.layerzeroscan.com/tx/${entry.switchTx}`}
+                      href={`${explorer}/tx/${entry.switchTx}`}
                       target="_blank"
                       className="text-blue-600 hover:underline"
                     >
-                      Status
+                      {entry.switchTx.slice(0, 6)}…{entry.switchTx.slice(-4)}
                     </a>
-                  ) : (
-                    <span className="text-gray-400">—</span>
-                  )}
-                </td>
-                <td className="py-2">
-                  {" "}
-                  {entry.CCIP.isUsed ? (
-                    <a
-                      href={`https://ccip.chain.link/`}
-                      target="_blank"
-                      className="text-blue-600 hover:underline"
-                    >
-                      Status
-                    </a>
-                  ) : (
-                    <span className="text-gray-400">—</span>
-                  )}
-                </td>
-                <td className="py-2">
-                  {entry.vea.isUsed ? (
-                    entry.vea.txHash.slice(0, 6) +
-                    "…" +
-                    entry.vea.txHash.slice(-4)
-                  ) : (
-                    <span className="text-gray-400">—</span>
-                  )}
-                </td>
-                <td className="py-2">
-                  {!entry.executed && (
-                    <button
-                      disabled={entry.chainId == chainId && !chainId}
-                      onClick={() => onExecute(entry)}
-                      className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
-                    >
-                      {entry.chainId == chainId
-                        ? "Execute"
-                        : "Switch wallet to " +
-                          CHAIN_BY_ID[entry.chainId]?.name}
-                    </button>
-                  )}
-                </td>
-              </tr>
-            ))}
+                  </td>
+                  {ALL_BRIDGES.map((bridge) => {
+                    const isUsed = entry.bridgeNames?.includes(bridge);
+                    const link = bridgeStatusLink(bridge, entry);
+                    return (
+                      <td key={bridge} className="py-2">
+                        {isUsed ? (
+                          link ? (
+                            <a
+                              href={link}
+                              target="_blank"
+                              className="text-blue-600 hover:underline"
+                            >
+                              Status
+                            </a>
+                          ) : (
+                            <span>Used</span>
+                          )
+                        ) : (
+                          <span className="text-gray-400">—</span>
+                        )}
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

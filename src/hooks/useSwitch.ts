@@ -3,11 +3,7 @@ import type { Address } from "viem";
 import { encodeFunctionData } from "viem";
 import { useSendTransaction } from "wagmi";
 import { SwitchAbi } from "@/utils/abis/switchAbi";
-import {
-  HashiAddress,
-  SWITCH_ADDRESS,
-  LIGHTBULB_PER_CHAIN,
-} from "@/utils/consts";
+import type { HashiAddress, Route } from "@/utils/consts";
 
 export type TxnStatus = "idle" | "pending" | "success" | "error";
 
@@ -29,9 +25,9 @@ interface UseSwitchReturn {
 /**
  * Hook to interact with the Switch contract's turnOnLightBulb function.
  *
- * @param contractAddress - deployed Switch contract address
+ * @param route - the source→destination route whose Switch is called
  */
-export function useSwitch(lightbulbChainId: number): UseSwitchReturn {
+export function useSwitch(route: Route): UseSwitchReturn {
   const [status, setStatus] = useState<TxnStatus>("idle");
   const [txHash, setTxHash] = useState<string>();
   const [error, setError] = useState<string>();
@@ -57,16 +53,17 @@ export function useSwitch(lightbulbChainId: number): UseSwitchReturn {
         abi: SwitchAbi,
         functionName: "turnOnLightBulb",
         args: [
-          lightbulbChainId,
-          LIGHTBULB_PER_CHAIN[lightbulbChainId],
+          route.destination,
+          route.lightbulb,
           threshold,
           reporters,
           adapters,
         ],
       });
       sendTransaction({
-        to: SWITCH_ADDRESS,
+        to: route.switch,
         data,
+        chainId: route.source,
         value: BigInt(0),
       });
       setStatus("success");

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAppKitNetwork } from "@reown/appkit/react";
 import { useAppKitAccount } from "@reown/appkit/react";
-import { gnosisChiado } from "viem/chains";
+import { DEFAULT_ROUTE, Route } from "@/utils/consts";
 import { Header } from "@/components/Header";
 import { LightbulbControls } from "@/components/LightBulbControls";
 import { HistoryTable, HistoryEntry } from "@/components/HistoryDialog";
@@ -12,7 +12,13 @@ import { createAppKit } from "@reown/appkit/react";
 import { WagmiProvider } from "wagmi";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { projectId, metadata, networks, wagmiAdapter } from "@/utils/wagmi";
+import {
+  projectId,
+  metadata,
+  networks,
+  wagmiAdapter,
+  getAppKitNetwork,
+} from "@/utils/wagmi";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -52,24 +58,42 @@ createAppKit({
 
 export default function Home() {
   const [history, setHistory] = useState<HistoryEntry[]>([]);
-  const [lightbulbChainId, setLightbulbChainId] = useState<number>(
-    gnosisChiado.id
-  );
-  const { chainId: connectedChainId } = useAppKitNetwork();
-  const { address } = useAppKitAccount();
+  const [route, setRoute] = useState<Route>(DEFAULT_ROUTE);
+  const { chainId: connectedChainId, switchNetwork } = useAppKitNetwork();
+  const { address, isConnected } = useAppKitAccount();
   console.log("Connected chainId", connectedChainId);
 
+  // keep the wallet on the route's source (Switch) chain
   useEffect(() => {
-    const stored = localStorage.getItem(`lightbulbHistory-${lightbulbChainId}`);
+    if (!isConnected || Number(connectedChainId) === route.source) return;
+    const network = getAppKitNetwork(route.source);
+    if (network) switchNetwork(network);
+  }, [isConnected, connectedChainId, route.source, switchNetwork]);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("lightbulbHistory");
     if (stored) {
       try {
         const parsed: HistoryEntry[] = JSON.parse(stored);
-        setHistory(parsed);
+        // drop entries from the previous, destination-only history format and
+        // dedupe by switch tx hash (cleans up history saved before the
+        // duplicate-append fix)
+        const seen = new Set<string>();
+        const cleaned = parsed.filter((entry) => {
+          if (!entry.source || !entry.destination) return false;
+          if (seen.has(entry.switchTx)) return false;
+          seen.add(entry.switchTx);
+          return true;
+        });
+        if (cleaned.length !== parsed.length) {
+          localStorage.setItem("lightbulbHistory", JSON.stringify(cleaned));
+        }
+        setHistory(cleaned);
       } catch (e) {
         console.error("Failed to parse history from localStorage", e);
       }
     }
-  }, [setHistory, lightbulbChainId]);
+  }, [setHistory]);
 
   return (
     <div
@@ -79,22 +103,16 @@ export default function Home() {
         <QueryClientProvider client={queryClient}>
           <>
             <Header />
-            <div className="flex w-full justify-around">
+            <div className="flex w-full mb-40 justify-around">
               <LightbulbControls
                 {...{
                   setHistory,
-                  lightbulbChainId,
+                  route,
                 }}
               />
-              <LightbulbStatusDialog
-                {...{ address, lightbulbChainId, setLightbulbChainId }}
-              />
+              <LightbulbStatusDialog {...{ address, route, setRoute }} />
             </div>
-            {history.length > 0 && (
-              <HistoryTable
-                {...{ chainId: connectedChainId as number, history }}
-              />
-            )}
+            {history.length > 0 && <HistoryTable {...{ history }} />}
           </>
         </QueryClientProvider>
       </WagmiProvider>

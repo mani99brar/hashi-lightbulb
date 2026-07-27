@@ -1,34 +1,32 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useLightBulb } from "@/hooks/useLigthBulb";
-import { Address, Chain } from "viem";
-import { gnosisChiado, sepolia } from "viem/chains";
+import { Address } from "viem";
+import {
+  Route,
+  SOURCE_CHAIN_IDS,
+  destinationsForSource,
+  getRoute,
+} from "@/utils/consts";
+import { CHAIN_BY_ID } from "@/utils/viem";
 
-const LIGHTBULB_CHAINS: Chain[] = [gnosisChiado, sepolia];
+const chainName = (id: number) => CHAIN_BY_ID[id]?.name ?? `Chain ${id}`;
 
 /**
  * Always-visible dialog to check and display lightbulb on/off status.
  */
 export function LightbulbStatusDialog({
   address,
-  lightbulbChainId,
-  setLightbulbChainId,
+  route,
+  setRoute,
 }: {
   address: string | undefined;
-  lightbulbChainId: number;
-  setLightbulbChainId: React.Dispatch<React.SetStateAction<number>>;
+  route: Route;
+  setRoute: React.Dispatch<React.SetStateAction<Route>>;
 }) {
   // optional override input
   const [inputAddress, setInputAddress] = useState<string>("");
-  // current lightbulb status
-  const { isOn, loading, refetch } = useLightBulb(
-    lightbulbChainId,
-    address as Address
-  );
-
-  // fetch connected address on mount
-  useEffect(() => {
-    refetch(lightbulbChainId);
-  }, [lightbulbChainId, refetch]);
+  // current lightbulb status; the hook auto-fetches on route/address change
+  const { isOn, loading, refetch } = useLightBulb(route, address as Address);
 
   /**
    * Trigger a status check for the given address (or connected address if none)
@@ -47,11 +45,19 @@ export function LightbulbStatusDialog({
     }
   };
 
-  const handleLightbulbChain = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const nextId = Number(e.target.value);
-    if (Number.isFinite(nextId)) {
-      setLightbulbChainId(nextId);
-    }
+  const handleSourceChain = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const nextSource = Number(e.target.value);
+    if (!Number.isFinite(nextSource)) return;
+    const [firstDestination] = destinationsForSource(nextSource);
+    const nextRoute = getRoute(nextSource, firstDestination);
+    if (nextRoute) setRoute(nextRoute);
+  };
+
+  const handleDestinationChain = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const nextDestination = Number(e.target.value);
+    if (!Number.isFinite(nextDestination)) return;
+    const nextRoute = getRoute(route.source, nextDestination);
+    if (nextRoute) setRoute(nextRoute);
   };
 
   return (
@@ -60,21 +66,37 @@ export function LightbulbStatusDialog({
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">Lightbulb Status</h2>
 
-          {/* Lightbulb Chain Selector */}
-          <label className="block text-sm">
-            Lightbulb chain
-            <select
-              value={lightbulbChainId}
-              onChange={handleLightbulbChain}
-              className="ml-2 px-2 py-1 border rounded"
-            >
-              {LIGHTBULB_CHAINS.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          {/* Route Selectors */}
+          <div className="flex gap-4">
+            <label className="block text-sm">
+              Switch chain
+              <select
+                value={route.source}
+                onChange={handleSourceChain}
+                className="ml-2 px-2 py-1 border rounded"
+              >
+                {SOURCE_CHAIN_IDS.map((id) => (
+                  <option key={id} value={id}>
+                    {chainName(id)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block text-sm">
+              Lightbulb chain
+              <select
+                value={route.destination}
+                onChange={handleDestinationChain}
+                className="ml-2 px-2 py-1 border rounded"
+              >
+                {destinationsForSource(route.source).map((id) => (
+                  <option key={id} value={id}>
+                    {chainName(id)}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
         </div>
         {/* Address Input */}
         <div className="mb-4">
